@@ -26,19 +26,38 @@ function App() {
   const fetchStockData = useCallback(async (symbol) => {
     setLoading(true);
     try {
-      const [quoteRes, predictRes, horoscopeRes, transitRes, newsRes] = await Promise.allSettled([
+      // First fetch quote + news so we can weight predictions by real price & sentiment
+      const [quoteRes, newsRes, horoscopeRes, transitRes] = await Promise.allSettled([
         fetch(`${API_BASE}/nse/quote/${symbol}`).then(r => r.json()),
-        fetch(`${API_BASE}/kp/predictions?date=${predictionDate}&interval=5`).then(r => r.json()),
+        fetch(`${API_BASE}/news/${symbol}`).then(r => r.json()),
         fetch(`${API_BASE}/kp/horoscope/${symbol}`).then(r => r.json()),
-        fetch(`${API_BASE}/kp/transit/${symbol}?date=${predictionDate}`).then(r => r.json()),
-        fetch(`${API_BASE}/news/${symbol}`).then(r => r.json())
+        fetch(`${API_BASE}/kp/transit/${symbol}?date=${predictionDate}`).then(r => r.json())
       ]);
 
-      if (quoteRes.status === 'fulfilled') setStockQuote(quoteRes.value);
-      if (predictRes.status === 'fulfilled') setPredictions(predictRes.value);
+      let quoteVal = quoteRes.status === 'fulfilled' ? quoteRes.value : null;
+      let newsVal = newsRes.status === 'fulfilled' ? newsRes.value : null;
+      if (quoteVal) setStockQuote(quoteVal);
+      if (newsVal) setNews(newsVal);
       if (horoscopeRes.status === 'fulfilled') setHoroscope(horoscopeRes.value);
       if (transitRes.status === 'fulfilled') setTransit(transitRes.value);
-      if (newsRes.status === 'fulfilled') setNews(newsRes.value);
+
+      // News sentiment score: positive=+1, negative=-1, neutral=0, averaged & scaled
+      let newsScore = 0;
+      if (newsVal && Array.isArray(newsVal.articles) && newsVal.articles.length) {
+        let s = 0;
+        newsVal.articles.forEach(a => { s += a.sentiment === 'positive' ? 1 : a.sentiment === 'negative' ? -1 : 0; });
+        newsScore = (s / newsVal.articles.length) * 0.6;
+      }
+      // Base price for the predicted curve = previous close (or current price)
+      const basePrice = (quoteVal && quoteVal.previousClose) ? quoteVal.previousClose
+                       : (quoteVal && quoteVal.currentPrice) ? quoteVal.currentPrice : 100;
+
+      // Company-specific predictions (transit-on-natal + dasha + news + real price base)
+      const predictRes = await fetch(
+        `${API_BASE}/kp/predictions?date=${predictionDate}&interval=5&symbol=${symbol}` +
+        `&newsScore=${newsScore.toFixed(4)}&basePrice=${basePrice}`
+      ).then(r => r.json()).catch(() => null);
+      if (predictRes) setPredictions(predictRes);
     } catch (err) {
       console.error('Error fetching stock data:', err);
     } finally {

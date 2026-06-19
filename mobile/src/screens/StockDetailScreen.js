@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { COLORS } from '../utils/theme';
 import { fetchStockQuote, fetchStockNews } from '../services/api';
-import { generateCompanyHoroscope, generateMumbaiPredictions, PLANETS, PLANET_NATURE } from '../utils/kpEngine';
+import { generateCompanyHoroscope, generateCompanyPredictions, PLANETS, PLANET_NATURE } from '../utils/kpEngine';
 
 export default function StockDetailScreen({ route }) {
   const { symbol, company } = route.params;
   const [quote, setQuote] = useState(null);
   const [news, setNews] = useState([]);
+  const [predictions, setPredictions] = useState([]);
+  const [dasha, setDasha] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const horoscope = generateCompanyHoroscope(company.date);
   const today = new Date().toISOString().split('T')[0];
-  const predictions = generateMumbaiPredictions(today, 15);
 
   const loadData = async () => {
     const [q, n] = await Promise.all([
@@ -22,6 +23,17 @@ export default function StockDetailScreen({ route }) {
     ]);
     setQuote(q);
     setNews(n || []);
+    // Company-specific predictions weighted by news sentiment + real price
+    let newsScore = 0;
+    if (n && n.length) {
+      let s = 0;
+      n.forEach(a => { s += a.sentiment === 'positive' ? 1 : a.sentiment === 'negative' ? -1 : 0; });
+      newsScore = (s / n.length) * 0.6;
+    }
+    const base = (q && q.previousClose) ? q.previousClose : (q && q.price) ? q.price : 100;
+    const result = generateCompanyPredictions(today, company.date, newsScore, base, 5);
+    setPredictions(result.predictions);
+    setDasha(result.dasha);
     setLoading(false);
     setRefreshing(false);
   };
@@ -33,7 +45,7 @@ export default function StockDetailScreen({ route }) {
   // Summary
   const bullish = predictions.filter(p => p.signal.includes('BUY')).length;
   const bearish = predictions.filter(p => p.signal.includes('SELL')).length;
-  const avgScore = predictions.reduce((s, p) => s + parseFloat(p.score), 0) / predictions.length;
+  const avgScore = predictions.length ? predictions.reduce((s, p) => s + parseFloat(p.score), 0) / predictions.length : 0;
 
   if (loading) {
     return (
@@ -101,6 +113,25 @@ export default function StockDetailScreen({ route }) {
         })()}
       </View>
 
+      {/* Vimshottari Dasha (company-specific) */}
+      {dasha && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>☸ Vimshottari Dasha ({symbol})</Text>
+          <Text style={{ color: COLORS.textMuted, fontSize: 11, marginBottom: 8 }}>
+            Running planetary periods of the company, to Prana level
+          </Text>
+          {dasha.map((d, i) => (
+            <View key={i} style={styles.dashaRow}>
+              <Text style={styles.dashaLevel}>{d.level}</Text>
+              <Text style={styles.dashaPlanet}>{d.symbol} {d.planet}</Text>
+              <Text style={{
+                fontSize: 10, color: d.weight > 0 ? COLORS.bullish : d.weight < 0 ? COLORS.bearish : COLORS.neutral
+              }}>{d.nature}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Company Horoscope */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>♅ Natal Chart (Inc: {company.date})</Text>
@@ -165,6 +196,9 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
   },
   cardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.accentGold, marginBottom: 12 },
+  dashaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  dashaLevel: { fontSize: 11, color: COLORS.textMuted, width: 80 },
+  dashaPlanet: { fontSize: 12, color: COLORS.textPrimary, fontWeight: '600', flex: 1 },
   summaryRow: { flexDirection: 'row', gap: 10 },
   summaryBadge: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 8 },
   planetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

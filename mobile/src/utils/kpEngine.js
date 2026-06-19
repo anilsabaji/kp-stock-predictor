@@ -341,6 +341,121 @@ export function generateMumbaiPredictions(dateStr, intervalMinutes = 5) {
   return predictions;
 }
 
+// ---- Vimshottari Dasha + transit-on-natal for company-specific mobile predictions ----
+function _subDashaM(lord, L, rem, depth, out) {
+  out.push(lord);
+  if (depth === 0) return out;
+  const idx = DASHA_SEQUENCE.indexOf(lord);
+  for (let i = 0; i < 9; i++) {
+    const sub = DASHA_SEQUENCE[(idx + i) % 9];
+    const sl = L * (PLANETS[sub].years / 120);
+    if (rem < sl) return _subDashaM(sub, sl, rem, depth - 1, out);
+    rem -= sl;
+  }
+  return out;
+}
+
+export function vimshottariDasha(moonSid, birth, at) {
+  const ni = Math.floor(moonSid / NAKSHATRA_SPAN);
+  const frac = (moonSid - ni * NAKSHATRA_SPAN) / NAKSHATRA_SPAN;
+  const sl = NAKSHATRAS[ni % 27].ruler;
+  const si = DASHA_SEQUENCE.indexOf(sl);
+  const fy = PLANETS[sl].years;
+  let t = fy * frac + (at - birth) / (365.2425 * 86400000);
+  t = ((t % 120) + 120) % 120;
+  let rem = t, maha = sl;
+  for (let i = 0; i < 9; i++) {
+    const ld = DASHA_SEQUENCE[(si + i) % 9];
+    const sp = PLANETS[ld].years;
+    if (rem < sp) { maha = ld; break; }
+    rem -= sp;
+  }
+  const out = [];
+  _subDashaM(maha, PLANETS[maha].years, rem, 4, out);
+  return out;
+}
+
+export function dashaCompositeScore(d) {
+  const w = [0.35, 0.25, 0.20, 0.12, 0.08];
+  let s = 0;
+  for (let i = 0; i < 5; i++) s += w[i] * PLANET_NATURE[d[i]].weight;
+  return s;
+}
+
+function transitNatalM(tps, asc, natal) {
+  const asp = [[0, 1], [60, 0.5], [90, -0.7], [120, 0.8], [180, -0.5]];
+  let s = 0;
+  const pts = Object.assign({ ASC: asc }, tps);
+  for (const tk in pts) {
+    const wt = tk === 'ASC' ? 0.3 : PLANET_NATURE[tk].weight;
+    for (const nk in natal) {
+      let df = Math.abs(pts[tk] - natal[nk]);
+      df = Math.min(df, 360 - df);
+      for (const a of asp) {
+        if (Math.abs(df - a[0]) <= 6) {
+          const of = 1 - Math.abs(df - a[0]) / 6;
+          s += a[1] * of * (wt * 0.5 + PLANET_NATURE[nk].weight * 0.5) * 0.15;
+        }
+      }
+    }
+  }
+  return s;
+}
+
+export function generateCompanyPredictions(dateStr, incorporationDate, newsScore = 0, basePrice = 100, intervalMinutes = 5) {
+  const birth = new Date(incorporationDate + 'T12:00:00Z');
+  const natal = calculatePlanetaryPositions(birth);
+  const ay0 = calculateLahiriAyanamsa(birth);
+  const moonSid = normalizeDegrees(natal.MOON - ay0);
+  const dasha = vimshottariDasha(moonSid, birth, new Date(dateStr + 'T06:00:00Z'));
+  const ds5 = dashaCompositeScore(dasha);
+  const predictions = [];
+  const baseDate = new Date(dateStr);
+  const ay = calculateLahiriAyanamsa(baseDate);
+  for (let hour = 9; hour <= 15; hour++) {
+    const maxMin = hour === 15 ? 30 : 60;
+    for (let minute = 0; minute < maxMin; minute += intervalMinutes) {
+      const dt = new Date(baseDate);
+      dt.setUTCHours(hour - 5, minute - 30, 0, 0);
+      const positions = calculatePlanetaryPositions(dt);
+      const sa = calculateSiderealAscendant(dt);
+      const al = getKPLevels(sa);
+      const ms = normalizeDegrees(positions.MOON - ay);
+      const ml = getKPLevels(ms);
+      const mh = (Math.floor(normalizeDegrees(ms - sa) / 30) % 12) + 1;
+      const mhb = getMoonHouseBonus(mh);
+      const tn = transitNatalM(positions, sa, natal);
+      const score = calculateKPScore(ml, 'MOON') * 0.20 + calculateKPScore(al, getSignLord(sa)) * 0.15 +
+                    mhb * 0.10 + tn * 0.30 + ds5 * 0.15 + newsScore * 0.10;
+      let signal = 'NEUTRAL';
+      if (score > 0.3) signal = 'STRONG_BUY';
+      else if (score > 0.1) signal = 'BUY';
+      else if (score < -0.3) signal = 'STRONG_SELL';
+      else if (score < -0.1) signal = 'SELL';
+      predictions.push({
+        time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+        hour, minute, signal, score: score.toFixed(4), moonHouse: mh,
+        ascSign: SIGNS[Math.floor(sa / 30)].name, moonSign: SIGNS[Math.floor(ms / 30)].name,
+        moonLevels: {
+          starLord: PLANETS[ml.starLord].name, subLord: PLANETS[ml.subLord].name, pranaLord: PLANETS[ml.pranaLord].name,
+        },
+      });
+    }
+  }
+  let cum = 0;
+  predictions.forEach(x => {
+    cum += parseFloat(x.score) * 0.004;
+    cum = Math.max(-0.15, Math.min(0.15, cum));
+    x.predPrice = +(basePrice * (1 + cum)).toFixed(2);
+  });
+  const levels = ['Maha', 'Antar', 'Pratyantar', 'Sookshma', 'Prana'];
+  const dashaInfo = dasha.map((p, i) => ({
+    level: levels[i], planet: PLANETS[p].name, symbol: PLANETS[p].symbol,
+    nature: PLANET_NATURE[p].nature, weight: PLANET_NATURE[p].weight,
+  }));
+  return { predictions, dasha: dashaInfo, dashaScore: ds5.toFixed(4) };
+}
+
 export function generateCompanyHoroscope(incorporationDate) {
   const date = new Date(incorporationDate + 'T12:00:00Z');
   const positions = calculatePlanetaryPositions(date);

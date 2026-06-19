@@ -2,29 +2,68 @@ const express = require('express');
 const router = express.Router();
 const kpEngine = require('../lib/kpEngine');
 
-// GET /api/kp/predictions - Get minute-level predictions for a date (Mumbai-based)
+// Incorporation dates for company-specific natal charts & dasha
+const INCORPORATION_DATES = {
+  'RELIANCE': '1973-05-08', 'TCS': '1968-04-01', 'HDFCBANK': '1994-08-30', 'INFY': '1981-07-02',
+  'ICICIBANK': '1994-01-05', 'HINDUNILVR': '1933-10-17', 'ITC': '1910-08-24', 'SBIN': '1955-07-01',
+  'BHARTIARTL': '1995-07-07', 'KOTAKBANK': '1985-11-21', 'LICI': '1956-09-01', 'LT': '1946-02-07',
+  'BAJFINANCE': '1987-03-25', 'HCLTECH': '1991-11-12', 'ASIANPAINT': '1942-02-01', 'MARUTI': '1981-02-24',
+  'SUNPHARMA': '1983-12-17', 'TATAMOTORS': '1945-09-01', 'TITAN': '1984-07-26', 'AXISBANK': '1993-12-03',
+  'WIPRO': '1945-12-29', 'ADANIENT': '1993-11-17', 'TATASTEEL': '1907-08-26', 'NTPC': '1975-11-07',
+  'POWERGRID': '1989-10-23', 'ONGC': '1956-08-14', 'COALINDIA': '1973-11-01', 'ULTRACEMCO': '2000-08-24',
+  'JSWSTEEL': '1994-03-15', 'M&M': '1945-10-02', 'TECHM': '1986-10-24', 'NESTLEIND': '1959-03-28',
+  'DRREDDY': '1984-02-24', 'CIPLA': '1935-09-22', 'DIVISLAB': '1990-06-01', 'BAJAJFINSV': '2007-04-30',
+  'GRASIM': '1947-08-25', 'BRITANNIA': '1918-03-21', 'HEROMOTOCO': '1984-01-19', 'APOLLOHOSP': '1979-01-05',
+  'TATACONSUM': '1962-11-01', 'INDUSINDBK': '1994-01-31', 'EICHERMOT': '1982-04-29', 'ADANIPORTS': '1998-05-26',
+  'SBILIFE': '2000-10-03', 'BPCL': '1952-11-03', 'HINDALCO': '1958-12-15', 'VEDL': '1965-06-25',
+  'HDFCLIFE': '2000-01-14', 'BANKBARODA': '1908-07-20'
+};
+
+// GET /api/kp/predictions - Company-specific minute-level predictions
+// Params: date, symbol, newsScore, basePrice, interval, mode
 router.get('/predictions', (req, res) => {
   try {
-    const { date, interval, mode } = req.query;
+    const { date, interval, mode, symbol, newsScore, basePrice } = req.query;
     const predictionDate = date || new Date().toISOString().split('T')[0];
     const intervalMinutes = parseInt(interval) || 5;
-    
-    // Use Mumbai transit-based predictions by default
-    const predictions = (mode === 'basic') 
-      ? kpEngine.generateMinutePredictions(predictionDate, 9, 15, intervalMinutes)
-      : kpEngine.generateMumbaiMinutePredictions(predictionDate, 9, 15, intervalMinutes);
-    
-    // Summary statistics
+    const incDate = symbol ? INCORPORATION_DATES[symbol.toUpperCase()] : null;
+
+    let predictions, dasha = null, dashaScore = null, predMode;
+
+    if (mode === 'basic') {
+      predictions = kpEngine.generateMinutePredictions(predictionDate, 9, 15, intervalMinutes);
+      predMode = 'basic';
+    } else if (incDate) {
+      // Company-specific: transit-on-natal + Vimshottari dasha + news weighting
+      const result = kpEngine.generateCompanyPredictions(
+        predictionDate, incDate,
+        newsScore !== undefined ? parseFloat(newsScore) : 0,
+        basePrice !== undefined ? parseFloat(basePrice) : 100,
+        intervalMinutes
+      );
+      predictions = result.predictions;
+      dasha = result.dasha;
+      dashaScore = result.dashaScore;
+      predMode = 'company_specific';
+    } else {
+      predictions = kpEngine.generateMumbaiMinutePredictions(predictionDate, 9, 15, intervalMinutes);
+      predMode = 'mumbai_transit';
+    }
+
     const bullishCount = predictions.filter(p => p.signal.includes('BUY')).length;
     const bearishCount = predictions.filter(p => p.signal.includes('SELL')).length;
     const neutralCount = predictions.filter(p => p.signal === 'NEUTRAL').length;
     const avgScore = predictions.reduce((sum, p) => sum + parseFloat(p.score), 0) / predictions.length;
-    
+
     res.json({
       date: predictionDate,
+      symbol: symbol ? symbol.toUpperCase() : null,
+      incorporationDate: incDate,
       interval: intervalMinutes,
       location: kpEngine.MUMBAI.name,
-      mode: mode === 'basic' ? 'basic' : 'mumbai_transit',
+      mode: predMode,
+      dasha,
+      dashaScore,
       totalPredictions: predictions.length,
       summary: {
         bullishPeriods: bullishCount,

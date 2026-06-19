@@ -91,12 +91,35 @@ function KPChart({ predictions, priceData, symbol }) {
       }
     }
 
-    // Price overlay if available
+    // Predicted price curve (company-specific KP forecast)
+    const predPrices = predictionData.map(p => (p.predPrice != null ? p.predPrice : null));
+    if (predPrices.some(p => p !== null) && (chartType === 'combined' || chartType === 'price')) {
+      datasets.push({
+        label: 'KP Predicted Price (INR)',
+        data: predPrices,
+        borderColor: '#f0b90b',
+        backgroundColor: 'rgba(240, 185, 11, 0.08)',
+        borderWidth: 2,
+        borderDash: [6, 3],
+        fill: false,
+        tension: 0.3,
+        yAxisID: 'y1',
+        pointRadius: 0,
+        pointHoverRadius: 3,
+        order: 0
+      });
+    }
+
+    // Actual price overlay if available
     if (priceData && priceData.length > 0 && (chartType === 'combined' || chartType === 'price')) {
-      const pricePoints = priceData.slice(0, kpLabels.length).map(d => d?.close || null);
+      // Map actual intraday points across the prediction timeline
+      const pricePoints = kpLabels.map((_, i) => {
+        const idx = Math.floor(i / kpLabels.length * priceData.length);
+        return priceData[idx] ? (priceData[idx].close ?? null) : null;
+      });
       if (pricePoints.some(p => p !== null)) {
         datasets.push({
-          label: `${symbol} Price (INR)`,
+          label: `${symbol} Actual Price (INR)`,
           data: pricePoints,
           borderColor: '#2196f3',
           backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -200,8 +223,9 @@ function KPChart({ predictions, priceData, symbol }) {
       }
     };
 
-    // Remove y1 axis if no price data
-    if (!priceData || priceData.length === 0 || chartType === 'signals') {
+    // Remove y1 (price) axis only when showing signals-only or when neither actual nor predicted price exists
+    const hasPredPrice = predictionData.some(p => p.predPrice != null);
+    if ((!priceData || priceData.length === 0) && !hasPredPrice || chartType === 'signals') {
       delete config.options.scales.y1;
     }
 

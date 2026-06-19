@@ -1008,6 +1008,140 @@ function analyzeTransitOnNatal(transitDate, incorporationDate) {
   };
 }
 
+/**
+ * Vimshottari Dasha (Maha -> Antar -> Pratyantar -> Sookshma -> Prana)
+ * Computed from the company's natal Moon position and elapsed time since incorporation.
+ */
+function _subDasha(lord, L, rem, depth, out) {
+  out.push(lord);
+  if (depth === 0) return out;
+  const idx = DASHA_SEQUENCE.indexOf(lord);
+  for (let i = 0; i < 9; i++) {
+    const sub = DASHA_SEQUENCE[(idx + i) % 9];
+    const sl = L * (PLANETS[sub].years / 120);
+    if (rem < sl) return _subDasha(sub, sl, rem, depth - 1, out);
+    rem -= sl;
+  }
+  return out;
+}
+
+function vimshottariDasha(moonSidereal, birthDate, atDate) {
+  const ni = Math.floor(moonSidereal / NAKSHATRA_SPAN);
+  const frac = (moonSidereal - ni * NAKSHATRA_SPAN) / NAKSHATRA_SPAN;
+  const startLord = NAKSHATRAS[ni % 27].ruler;
+  const si = DASHA_SEQUENCE.indexOf(startLord);
+  const fy = PLANETS[startLord].years;
+  let t = fy * frac + (atDate - birthDate) / (365.2425 * 86400000);
+  t = ((t % 120) + 120) % 120;
+  let rem = t, maha = startLord;
+  for (let i = 0; i < 9; i++) {
+    const ld = DASHA_SEQUENCE[(si + i) % 9];
+    const sp = PLANETS[ld].years;
+    if (rem < sp) { maha = ld; break; }
+    rem -= sp;
+  }
+  const out = [];
+  _subDasha(maha, PLANETS[maha].years, rem, 4, out);
+  return out; // [Maha, Antar, Pratyantar, Sookshma, Prana]
+}
+
+function dashaCompositeScore(d) {
+  const w = [0.35, 0.25, 0.20, 0.12, 0.08];
+  let s = 0;
+  for (let i = 0; i < 5; i++) s += w[i] * PLANET_NATURE[d[i]].weight;
+  return s;
+}
+
+/**
+ * How transit planets aspect the company's natal chart (company-specific).
+ */
+function transitNatalScore(transitPositions, ascLong, natalPositions) {
+  const aspects = [[0, 1], [60, 0.5], [90, -0.7], [120, 0.8], [180, -0.5]];
+  let s = 0;
+  const pts = Object.assign({ ASC: ascLong }, transitPositions);
+  for (const tk in pts) {
+    const wt = tk === 'ASC' ? 0.3 : PLANET_NATURE[tk].weight;
+    for (const nk in natalPositions) {
+      let df = Math.abs(pts[tk] - natalPositions[nk]);
+      df = Math.min(df, 360 - df);
+      for (const a of aspects) {
+        if (Math.abs(df - a[0]) <= 6) {
+          const of = 1 - Math.abs(df - a[0]) / 6;
+          s += a[1] * of * (wt * 0.5 + PLANET_NATURE[nk].weight * 0.5) * 0.15;
+        }
+      }
+    }
+  }
+  return s;
+}
+
+/**
+ * Company-specific minute-level predictions + predicted price curve.
+ * Combines: transit-on-natal aspects, Vimshottari dasha (to Prana), Mumbai transit, and news sentiment.
+ */
+function generateCompanyPredictions(date, incorporationDate, newsScore, basePrice, intervalMinutes) {
+  newsScore = newsScore || 0;
+  basePrice = basePrice || 100;
+  const iv = intervalMinutes || 5;
+  const birth = new Date(incorporationDate + 'T12:00:00Z');
+  const natal = calculatePlanetaryPositions(birth);
+  const ay0 = calculateLahiriAyanamsa(birth);
+  const moonSid = normalizeDegrees(natal.MOON - ay0);
+  const dasha = vimshottariDasha(moonSid, birth, new Date(date + 'T06:00:00Z'));
+  const ds5 = dashaCompositeScore(dasha);
+
+  const predictions = [];
+  const bd = new Date(date);
+  const ay = calculateLahiriAyanamsa(bd);
+  for (let h = 9; h <= 15; h++) {
+    const mx = h === 15 ? 30 : 60;
+    for (let m = 0; m < mx; m += iv) {
+      const dt = new Date(bd);
+      dt.setUTCHours(h - 5, m - 30, 0, 0);
+      const ps = calculatePlanetaryPositions(dt);
+      const sa = calculateSiderealAscendant(dt);
+      const al = getKPLevels(sa); al.L1_Planet = getSignLord(sa);
+      const ms = normalizeDegrees(ps.MOON - ay);
+      const ml = getKPLevels(ms); ml.L1_Planet = 'MOON';
+      const mh = (Math.floor(normalizeDegrees(ms - sa) / 30) % 12) + 1;
+      const mhb = getMoonHouseBonus(mh);
+      const tn = transitNatalScore(ps, sa, natal);
+      const score = calculateKPScore(ml) * 0.20 + calculateKPScore(al) * 0.15 +
+                    mhb * 0.10 + tn * 0.30 + ds5 * 0.15 + newsScore * 0.10;
+      let signal = 'NEUTRAL';
+      if (score > 0.3) signal = 'STRONG_BUY';
+      else if (score > 0.1) signal = 'BUY';
+      else if (score < -0.3) signal = 'STRONG_SELL';
+      else if (score < -0.1) signal = 'SELL';
+      predictions.push({
+        time: dt.toISOString(),
+        istTime: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' IST',
+        hour: h, minute: m, signal, score: score.toFixed(4),
+        moonHouse: mh, moonHouseSignificance: getHouseSignificance(mh),
+        ascendantSign: SIGNS[Math.floor(sa / 30)].name,
+        transitNatalScore: tn.toFixed(3),
+        moonLevels: {
+          starLord: PLANETS[ml.L3_StarLord].name,
+          subLord: PLANETS[ml.L4_SubLord].name,
+          pranaLord: PLANETS[ml.L5_PranaLord].name
+        }
+      });
+    }
+  }
+  let cum = 0;
+  predictions.forEach(x => {
+    cum += parseFloat(x.score) * 0.004;
+    cum = Math.max(-0.15, Math.min(0.15, cum));
+    x.predPrice = +(basePrice * (1 + cum)).toFixed(2);
+  });
+  const levels = ['Maha', 'Antar', 'Pratyantar', 'Sookshma', 'Prana'];
+  const dashaInfo = dasha.map((p, i) => ({
+    level: levels[i], planet: PLANETS[p].name, symbol: PLANETS[p].symbol,
+    nature: PLANET_NATURE[p].nature, weight: PLANET_NATURE[p].weight
+  }));
+  return { predictions, dasha: dashaInfo, dashaScore: ds5.toFixed(4) };
+}
+
 module.exports = {
   PLANETS,
   SIGNS,
@@ -1019,6 +1153,10 @@ module.exports = {
   calculateKPScore,
   generateMinutePredictions,
   generateMumbaiMinutePredictions,
+  generateCompanyPredictions,
+  vimshottariDasha,
+  dashaCompositeScore,
+  transitNatalScore,
   generateCompanyHoroscope,
   analyzeTransitOnNatal,
   calculateMumbaiDailyTransit,
