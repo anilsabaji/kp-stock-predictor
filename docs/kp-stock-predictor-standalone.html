@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KP Stock Predictor - Standalone</title>
+<style>
+:root{--bg:#0f1419;--bg2:#1a2332;--card:#1e2a3a;--hover:#243447;--tx:#e8eef4;--tx2:#8899aa;--tx3:#5c6d7e;--gold:#f0b90b;--blue:#2196f3;--purple:#9c27b0;--bull:#00c853;--bear:#ff1744;--neut:#ff9800;--bd:#2a3a4a;--r:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6}
+.header{background:linear-gradient(135deg,var(--bg2),#1a1f2e);border-bottom:1px solid var(--bd);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:8px;font-size:1.3rem;font-weight:700;color:var(--gold)}
+.logo-icon{font-size:1.8rem}
+.sub{font-size:.7rem;color:var(--tx3);text-transform:uppercase;letter-spacing:1px}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.date-input{padding:6px 12px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-size:.8rem}
+.main{display:flex;min-height:calc(100vh - 60px);flex-wrap:wrap}
+.left{width:260px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;max-height:calc(100vh - 60px);overflow-y:auto}
+.center{flex:1;min-width:300px;padding:16px;overflow-y:auto;max-height:calc(100vh - 60px)}
+.right{width:300px;background:var(--bg2);border-left:1px solid var(--bd);max-height:calc(100vh - 60px);overflow-y:auto}
+.ph{padding:14px 16px;border-bottom:1px solid var(--bd);font-weight:600;font-size:.9rem;color:var(--gold)}
+.search{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-size:.85rem;outline:none}
+.sbox{padding:12px 16px;border-bottom:1px solid var(--bd)}
+.sel{width:100%;padding:6px 10px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-size:.8rem;margin-top:8px}
+.slist{flex:1;padding:8px}
+.sitem{padding:10px 12px;border-radius:var(--r);cursor:pointer;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.sitem:hover{background:var(--hover)}
+.sitem.active{background:var(--hover);border-left:3px solid var(--gold)}
+.ssym{font-weight:600;font-size:.85rem}
+.snm{font-size:.68rem;color:var(--tx2);margin-top:2px}
+.ssec{font-size:.62rem;color:var(--blue);padding:2px 6px;background:rgba(33,150,243,.1);border-radius:4px}
+.card{background:var(--card);border-radius:12px;border:1px solid var(--bd);padding:16px;margin-bottom:16px}
+.ct{font-size:1rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.pname{font-size:1.2rem;font-weight:700}
+.pprice{font-size:1.6rem;font-weight:700}
+.pchg{font-size:.85rem;padding:4px 8px;border-radius:4px}
+.badge{text-align:center;padding:4px 12px;background:var(--bg2);border-radius:var(--r)}
+.bl{font-size:.62rem;color:var(--tx3);text-transform:uppercase}
+.bv{font-size:.9rem;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.pcard{background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;border:1px solid var(--bd)}
+.psym{font-size:1.4rem}
+.kpcard{background:var(--bg2);border-radius:var(--r);padding:12px;border:1px solid var(--bd)}
+.kpl{font-size:.65rem;color:var(--tx3);text-transform:uppercase}
+.kpv{font-size:.9rem;font-weight:600}
+.tag{font-size:.65rem;padding:2px 6px;border-radius:4px}
+.tline{display:flex;align-items:center;padding:7px 10px;border-radius:var(--r);margin-bottom:3px;gap:10px;font-size:.78rem}
+.tline:hover{background:var(--hover)}
+.ttime{font-weight:600;color:var(--tx2);min-width:46px}
+.tsig{padding:3px 8px;border-radius:4px;font-size:.68rem;font-weight:600;min-width:84px;text-align:center}
+.btn{padding:4px 12px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx2);font-size:.75rem;cursor:pointer}
+.btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.nitem{padding:12px;border-radius:var(--r);border:1px solid var(--bd);margin-bottom:10px;cursor:pointer}
+.nitem:hover{background:var(--hover);border-color:var(--blue)}
+.ntitle{font-size:.82rem;font-weight:500;line-height:1.4;margin-bottom:8px}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:.75rem}
+th{color:var(--tx3);padding:8px;text-align:left;border-bottom:1px solid var(--bd)}
+td{padding:7px 8px;border-bottom:1px solid var(--bd)}
+.spin{width:30px;height:30px;border:3px solid var(--bd);border-top-color:var(--gold);border-radius:50%;animation:sp 1s linear infinite;margin:20px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+@media(max-width:900px){.left,.right{width:100%;max-height:300px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+
+/* ============ KP ASTROLOGY ENGINE (pure JS, runs offline) ============ */
+const MUMBAI={latitude:19.0560,longitude:72.8470,timezone:5.5,name:'Mumbai (NSE - BKC)'};
+const PLANETS={
+KETU:{name:'Ketu',years:7,symbol:'\u260B'},VENUS:{name:'Venus',years:20,symbol:'\u2640'},
+SUN:{name:'Sun',years:6,symbol:'\u2609'},MOON:{name:'Moon',years:10,symbol:'\u263D'},
+MARS:{name:'Mars',years:7,symbol:'\u2642'},RAHU:{name:'Rahu',years:18,symbol:'\u260A'},
+JUPITER:{name:'Jupiter',years:16,symbol:'\u2643'},SATURN:{name:'Saturn',years:19,symbol:'\u2644'},
+MERCURY:{name:'Mercury',years:17,symbol:'\u263F'}};
+const DASHA=['KETU','VENUS','SUN','MOON','MARS','RAHU','JUPITER','SATURN','MERCURY'];
+const TOTAL=120;
+const SIGNS=[{name:'Aries',ruler:'MARS'},{name:'Taurus',ruler:'VENUS'},{name:'Gemini',ruler:'MERCURY'},
+{name:'Cancer',ruler:'MOON'},{name:'Leo',ruler:'SUN'},{name:'Virgo',ruler:'MERCURY'},
+{name:'Libra',ruler:'VENUS'},{name:'Scorpio',ruler:'MARS'},{name:'Sagittarius',ruler:'JUPITER'},
+{name:'Capricorn',ruler:'SATURN'},{name:'Aquarius',ruler:'SATURN'},{name:'Pisces',ruler:'JUPITER'}];
+const NAKS=[['Ashwini','KETU'],['Bharani','VENUS'],['Krittika','SUN'],['Rohini','MOON'],['Mrigashira','MARS'],
+['Ardra','RAHU'],['Punarvasu','JUPITER'],['Pushya','SATURN'],['Ashlesha','MERCURY'],['Magha','KETU'],
+['Purva Phalguni','VENUS'],['Uttara Phalguni','SUN'],['Hasta','MOON'],['Chitra','MARS'],['Swati','RAHU'],
+['Vishakha','JUPITER'],['Anuradha','SATURN'],['Jyeshtha','MERCURY'],['Mula','KETU'],['Purva Ashadha','VENUS'],
+['Uttara Ashadha','SUN'],['Shravana','MOON'],['Dhanishta','MARS'],['Shatabhisha','RAHU'],
+['Purva Bhadrapada','JUPITER'],['Uttara Bhadrapada','SATURN'],['Revati','MERCURY']].map(n=>({name:n[0],ruler:n[1]}));
+const NSPAN=13+20/60;
+const NATURE={KETU:{nature:'volatile',weight:-0.3},VENUS:{nature:'bullish',weight:0.7},
+SUN:{nature:'neutral_bullish',weight:0.4},MOON:{nature:'fluctuating',weight:0.2},
+MARS:{nature:'bearish',weight:-0.5},RAHU:{nature:'volatile_bullish',weight:0.3},
+JUPITER:{nature:'bullish',weight:0.8},SATURN:{nature:'bearish',weight:-0.6},MERCURY:{nature:'neutral',weight:0.1}};
+function norm(d){return((d%360)+360)%360}
+function jd(date){const dt=new Date(date),Y=dt.getUTCFullYear(),Mo=dt.getUTCMonth()+1,
+D=dt.getUTCDate()+dt.getUTCHours()/24+dt.getUTCMinutes()/1440+dt.getUTCSeconds()/86400;
+let y=Y,m=Mo;if(Mo<=2){y--;m+=12}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
+return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+D+B-1524.5}
+function sun(T){const L=280.46646+36000.76983*T,M=(357.52911+35999.05029*T)*Math.PI/180;
+return norm(L+(1.914602-0.004817*T)*Math.sin(M)+0.019993*Math.sin(2*M))}
+function moon(T){const L=218.3165+481267.8813*T,Dr=(297.8502+445267.1115*T)*Math.PI/180,
+M=(357.5291+35999.0503*T)*Math.PI/180,Mp=(134.9634+477198.8676*T)*Math.PI/180,F=(93.272+483202.0175*T)*Math.PI/180;
+return norm(L+6.289*Math.sin(Mp)+1.274*Math.sin(2*Dr-Mp)+0.658*Math.sin(2*Dr)+0.214*Math.sin(2*Mp)-0.186*Math.sin(M)-0.114*Math.sin(2*F))}
+function mars(T){const L=355.433+19140.2993*T,M=(19.373+19139.8585*T)*Math.PI/180;return norm(L+10.691*Math.sin(M)+0.623*Math.sin(2*M))}
+function merc(T){const L=252.251+149472.6746*T,M=(174.795+149472.5153*T)*Math.PI/180;return norm(L+23.44*Math.sin(M)+2.9818*Math.sin(2*M))}
+function jup(T){const L=34.351+3034.9057*T,M=(20.02+3034.6874*T)*Math.PI/180;return norm(L+5.555*Math.sin(M)+0.168*Math.sin(2*M))}
+function ven(T){const L=181.98+58517.8157*T,M=(50.416+58517.8039*T)*Math.PI/180;return norm(L+0.776*Math.sin(M))}
+function sat(T){const L=50.077+1222.1138*T,M=(317.02+1222.1132*T)*Math.PI/180;return norm(L+6.406*Math.sin(M)+0.318*Math.sin(2*M))}
+function rahu(T){return norm(125.0445-1934.1362*T)}
+function positions(d){const T=(jd(d)-2451545)/36525;return{SUN:sun(T),MOON:moon(T),MARS:mars(T),MERCURY:merc(T),JUPITER:jup(T),VENUS:ven(T),SATURN:sat(T),RAHU:rahu(T),KETU:norm(rahu(T)+180)}}
+function ayanamsa(d){return 23.8611+0.013972*(jd(d)-2451545)/365.25}
+
+function signLord(l){return SIGNS[Math.floor(l/30)].ruler}
+function starLord(l){return NAKS[Math.floor(l/NSPAN)%27].ruler}
+function subLord(l){const ni=Math.floor(l/NSPAN),p=l-ni*NSPAN,sl=NAKS[ni%27].ruler,si=DASHA.indexOf(sl);
+let acc=0;for(let i=0;i<9;i++){const pl=DASHA[(si+i)%9];acc+=NSPAN*(PLANETS[pl].years/TOTAL);if(p<acc)return pl}return sl}
+function pranaLord(l){const ni=Math.floor(l/NSPAN),p=l-ni*NSPAN,sl=NAKS[ni%27].ruler,si=DASHA.indexOf(sl);
+let acc=0,ss=0,sli=0;for(let i=0;i<9;i++){const pl=DASHA[(si+i)%9],sp=NSPAN*(PLANETS[pl].years/TOTAL);if(p<acc+sp){ss=acc;sli=(si+i)%9;break}acc+=sp}
+const pis=p-ss,slp=DASHA[sli],sps=NSPAN*(PLANETS[slp].years/TOTAL);
+let ssa=0,sss=0,ssi=0;for(let i=0;i<9;i++){const pl=DASHA[(sli+i)%9],sp=sps*(PLANETS[pl].years/TOTAL);if(pis<ssa+sp){sss=ssa;ssi=(sli+i)%9;break}ssa+=sp}
+const ssp=DASHA[ssi],sps2=sps*(PLANETS[ssp].years/TOTAL),piss=pis-sss;
+let pa=0;for(let i=0;i<9;i++){const pl=DASHA[(ssi+i)%9];pa+=sps2*(PLANETS[pl].years/TOTAL);if(piss<pa)return pl}return ssp}
+function kpLevels(l){return{signLord:signLord(l),starLord:starLord(l),subLord:subLord(l),pranaLord:pranaLord(l)}}
+function kpScore(lv,planet){const w={L1:0.10,L2:0.15,L3:0.25,L4:0.30,L5:0.20};let s=0;
+if(planet)s+=w.L1*NATURE[planet].weight;s+=w.L2*NATURE[lv.signLord].weight+w.L3*NATURE[lv.starLord].weight+w.L4*NATURE[lv.subLord].weight+w.L5*NATURE[lv.pranaLord].weight;return s}
+function sidAsc(d,lat,lng){lat=lat||MUMBAI.latitude;lng=lng||MUMBAI.longitude;
+const J=jd(d),T=(J-2451545)/36525;let G=norm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T*T);
+const LST=norm(G+lng)*Math.PI/180,lr=lat*Math.PI/180,e=(23.4393-0.013*T)*Math.PI/180;
+let a=norm(Math.atan2(Math.cos(LST),-(Math.sin(e)*Math.tan(lr)+Math.cos(e)*Math.sin(LST)))*180/Math.PI);
+return norm(a-ayanamsa(d))}
+function moonHouseBonus(h){return({1:0.1,2:0.5,3:0.1,4:0,5:0.6,6:-0.3,7:0.2,8:-0.5,9:0.3,10:0.5,11:0.7,12:-0.6})[h]||0}
+function houseSig(h){return({1:'Market sentiment',2:'Wealth/Finance',3:'Short-term moves',4:'Stability/Assets',5:'Speculation/Trading',6:'Debts/Obstacles',7:'Partnerships',8:'Sudden events/Losses',9:'Fortune/Growth',10:'Career/Leadership',11:'Gains/Income',12:'Losses/Expenses'})[h]||''}
+function genPredictions(ds,iv){iv=iv||5;const pr=[],base=new Date(ds),ay=ayanamsa(base);
+for(let h=9;h<=15;h++){const mx=h===15?30:60;for(let m=0;m<mx;m+=iv){const dt=new Date(base);dt.setUTCHours(h-5,m-30,0,0);
+const ps=positions(dt),sa=sidAsc(dt),al=kpLevels(sa),ms=norm(ps.MOON-ay),ml=kpLevels(ms);
+const mh=(Math.floor(norm(ms-sa)/30)%12)+1,mhb=moonHouseBonus(mh);
+const score=kpScore(ml,'MOON')*0.45+kpScore(al,signLord(sa))*0.35+mhb*0.20;
+let sig='NEUTRAL';if(score>0.3)sig='STRONG_BUY';else if(score>0.1)sig='BUY';else if(score<-0.3)sig='STRONG_SELL';else if(score<-0.1)sig='SELL';
+pr.push({time:String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),hour:h,minute:m,signal:sig,score:score.toFixed(4),
+moonHouse:mh,moonHouseSig:houseSig(mh),ascSign:SIGNS[Math.floor(sa/30)].name,
+moonLevels:{starLord:PLANETS[ml.starLord].name,subLord:PLANETS[ml.subLord].name,pranaLord:PLANETS[ml.pranaLord].name}})}}
+return pr}
+function genHoroscope(date){const d=new Date(date+'T12:00:00Z'),ps=positions(d),h={};
+for(const k in ps){const l=ps[k],lv=kpLevels(l);h[k]={longitude:l.toFixed(2),sign:SIGNS[Math.floor(l/30)].name,
+nakshatra:NAKS[Math.floor(l/NSPAN)%27].name,levels:lv,score:kpScore(lv,k).toFixed(4),symbol:PLANETS[k].symbol}}return h}
+function mumbaiTransit(date){const times=[['Open 9:15',3,45],['10:30',5,0],['Noon 12:00',6,30],['14:00',8,30],['Close 15:30',10,0]];
+const base=new Date(date),ay=ayanamsa(base);return times.map(t=>{const dt=new Date(base);dt.setUTCHours(t[1],t[2],0,0);
+const ps=positions(dt),sa=sidAsc(dt),al=kpLevels(sa),pl={};
+for(const k in ps){const sl=norm(ps[k]-ay),lv=kpLevels(sl),hh=(Math.floor(norm(sl-sa)/30)%12)+1;
+pl[k]={sign:SIGNS[Math.floor(sl/30)].name,nak:NAKS[Math.floor(sl/NSPAN)%27].name,house:hh,deg:sl.toFixed(1),
+levels:lv,score:kpScore(lv,k).toFixed(3),symbol:PLANETS[k].symbol}}
+return{label:t[0],ascSign:SIGNS[Math.floor(sa/30)].name,ascDeg:sa.toFixed(1),ascLevels:al,planets:pl}})}
+
+/* ============ NSE COMPANY DATA ============ */
+const COMPANIES=[
+['RELIANCE','Reliance Industries','1973-05-08','Energy'],['TCS','Tata Consultancy Services','1968-04-01','IT'],
+['HDFCBANK','HDFC Bank','1994-08-30','Banking'],['INFY','Infosys','1981-07-02','IT'],
+['ICICIBANK','ICICI Bank','1994-01-05','Banking'],['HINDUNILVR','Hindustan Unilever','1933-10-17','FMCG'],
+['ITC','ITC Limited','1910-08-24','FMCG'],['SBIN','State Bank of India','1955-07-01','Banking'],
+['BHARTIARTL','Bharti Airtel','1995-07-07','Telecom'],['KOTAKBANK','Kotak Mahindra Bank','1985-11-21','Banking'],
+['LT','Larsen & Toubro','1946-02-07','Infrastructure'],['BAJFINANCE','Bajaj Finance','1987-03-25','Finance'],
+['HCLTECH','HCL Technologies','1991-11-12','IT'],['ASIANPAINT','Asian Paints','1942-02-01','Paints'],
+['MARUTI','Maruti Suzuki','1981-02-24','Automobile'],['SUNPHARMA','Sun Pharma','1983-12-17','Pharma'],
+['TATAMOTORS','Tata Motors','1945-09-01','Automobile'],['TITAN','Titan Company','1984-07-26','Consumer'],
+['AXISBANK','Axis Bank','1993-12-03','Banking'],['WIPRO','Wipro','1945-12-29','IT'],
+['ADANIENT','Adani Enterprises','1993-11-17','Conglomerate'],['TATASTEEL','Tata Steel','1907-08-26','Metals'],
+['NTPC','NTPC','1975-11-07','Power'],['ONGC','ONGC','1956-08-14','Energy'],
+['JSWSTEEL','JSW Steel','1994-03-15','Metals'],['M&M','Mahindra & Mahindra','1945-10-02','Automobile'],
+['TECHM','Tech Mahindra','1986-10-24','IT'],['NESTLEIND','Nestle India','1959-03-28','FMCG'],
+['DRREDDY','Dr Reddys Labs','1984-02-24','Pharma'],['CIPLA','Cipla','1935-09-22','Pharma'],
+['POWERGRID','Power Grid Corp','1989-10-23','Power'],['COALINDIA','Coal India','1973-11-01','Mining'],
+['BRITANNIA','Britannia Industries','1918-03-21','FMCG'],['HEROMOTOCO','Hero MotoCorp','1984-01-19','Automobile'],
+['BAJAJFINSV','Bajaj Finserv','2007-04-30','Finance'],['INDUSINDBK','IndusInd Bank','1994-01-31','Banking'],
+['EICHERMOT','Eicher Motors','1982-04-29','Automobile'],['APOLLOHOSP','Apollo Hospitals','1979-01-05','Healthcare'],
+['SBILIFE','SBI Life Insurance','2000-10-03','Insurance'],['BPCL','Bharat Petroleum','1952-11-03','Energy']
+].map(c=>({symbol:c[0],name:c[1],date:c[2],sector:c[3]}));
+
+/* ============ DATA FETCHING (live, with CORS-proxy fallback) ============ */
+const PROXIES=['https://corsproxy.io/?url=','https://api.allorigins.win/raw?url='];
+async function tryFetch(url){
+  try{const r=await fetch(url);if(r.ok)return r}catch(e){}
+  for(const p of PROXIES){try{const r=await fetch(p+encodeURIComponent(url));if(r.ok)return r}catch(e){}}
+  return null}
+async function fetchQuote(sym){
+  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'.NS?interval=5m&range=1d';
+  const r=await tryFetch(url);if(!r)return null;
+  try{const d=await r.json(),res=d.chart.result[0],m=res.meta,q=res.indicators.quote[0],ts=res.timestamp||[];
+  return{symbol:sym,price:m.regularMarketPrice,prev:m.previousClose,change:m.regularMarketPrice-m.previousClose,
+  changePct:((m.regularMarketPrice-m.previousClose)/m.previousClose*100).toFixed(2),
+  high:m.regularMarketDayHigh,low:m.regularMarketDayLow,volume:m.regularMarketVolume,
+  intraday:ts.map((t,i)=>({t:t*1000,close:q.close?q.close[i]:null})).filter(x=>x.close!=null)}}catch(e){return null}}
+async function fetchGN(sym,name){
+  const url='https://news.google.com/rss/search?q='+encodeURIComponent(name+' '+sym+' NSE stock')+'&hl=en-IN&gl=IN&ceid=IN:en';
+  const r=await tryFetch(url);if(!r)return[];
+  try{const xml=await r.text(),items=xml.match(/<item>([\s\S]*?)<\/item>/g)||[];
+  return items.slice(0,10).map(it=>{const t=(it.match(/<title>([\s\S]*?)<\/title>/)||[])[1]||'',
+  l=(it.match(/<link>([\s\S]*?)<\/link>/)||[])[1]||'',s=(it.match(/<source[^>]*>([\s\S]*?)<\/source>/)||[])[1]||'News',
+  pd=(it.match(/<pubDate>([\s\S]*?)<\/pubDate>/)||[])[1]||'',ct=t.replace(/<!\[CDATA\[|\]\]>/g,'').trim();
+  return{title:ct,url:l.replace(/<!\[CDATA\[|\]\]>/g,'').trim(),source:s.replace(/<!\[CDATA\[|\]\]>/g,'').trim(),publishedAt:pd?new Date(pd).toISOString():new Date().toISOString(),provider:'Google News',sentiment:sentiment(ct)}})}catch(e){return[]}}
+async function fetchYN(sym){
+  const url='https://query1.finance.yahoo.com/v1/finance/search?q='+sym+'.NS&newsCount=12&quotesCount=0';
+  const r=await tryFetch(url);if(!r)return[];
+  try{const d=await r.json();return(d.news||[]).filter(n=>n.title).map(n=>({title:n.title,
+  url:n.link||'https://finance.yahoo.com/quote/'+sym+'.NS',
+  publishedAt:n.providerPublishTime?new Date(n.providerPublishTime*1000).toISOString():new Date().toISOString(),
+  source:n.publisher||'Yahoo Finance',provider:'Yahoo Finance',sentiment:sentiment(n.title)}))}catch(e){return[]}}
+async function fetchNSE(sym){
+  const url='https://www.nseindia.com/api/corporate-announcements?index=equities&symbol='+sym;
+  const r=await tryFetch(url);if(!r)return[];
+  try{const d=await r.json(),items=Array.isArray(d)?d:(d.data||[]);
+  return items.slice(0,10).map(a=>{const t=a.subject||a.desc||a.attchmntText||'';return{title:t,
+  url:a.attchmntFile||'https://www.nseindia.com/get-quotes/equity?symbol='+sym,
+  publishedAt:a.an_dt?new Date(a.an_dt).toISOString():new Date().toISOString(),
+  source:'NSE Announcement',provider:'NSE India',sentiment:sentiment(t)}}).filter(n=>n.title)}catch(e){return[]}}
+async function fetchNews(sym,name){
+  const res=await Promise.all([fetchGN(sym,name),fetchYN(sym),fetchNSE(sym)]);
+  const seen=new Set(),out=[];
+  for(const list of res)for(const a of list){const k=a.title.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,60);if(k&&!seen.has(k)){seen.add(k);out.push(a)}}
+  out.sort((a,b)=>new Date(b.publishedAt||0)-new Date(a.publishedAt||0));return out}
+function sentiment(t){const lo=t.toLowerCase();
+const b=['surge','rally','gain','profit','growth','bullish','record','boost','positive','buy','upgrade'].filter(w=>lo.includes(w)).length;
+const r=['fall','drop','loss','crash','bearish','sell','decline','negative','downgrade','concern'].filter(w=>lo.includes(w)).length;
+return b>r?'positive':r>b?'negative':'neutral'}
+
+/* ============ UI RENDERING ============ */
+const state={selected:null,quote:null,preds:null,horoscope:null,transit:null,news:null,
+date:new Date().toISOString().split('T')[0],search:'',sector:'',filter:'all',loading:false};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function sigColor(s){return s==='STRONG_BUY'?'var(--bull)':s==='BUY'?'#66bb6a':s==='STRONG_SELL'?'var(--bear)':s==='SELL'?'#ef5350':'var(--neut)'}
+function houseColor(h){return[2,5,10,11].includes(h)?'var(--bull)':[6,8,12].includes(h)?'var(--bear)':'var(--neut)'}
+function natColor(n){return n>0.2?'var(--bull)':n<-0.2?'var(--bear)':'var(--neut)'}
+
+function render(){
+  const sectors=[...new Set(COMPANIES.map(c=>c.sector))].sort();
+  const filtered=COMPANIES.filter(c=>{
+    const ms=!state.search||c.symbol.toLowerCase().includes(state.search.toLowerCase())||c.name.toLowerCase().includes(state.search.toLowerCase());
+    return ms&&(!state.sector||c.sector===state.sector)});
+  $('app').innerHTML=`
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="logo"><span class="logo-icon">\u263D</span><span>KP Stock Predictor</span></div>
+      <span class="sub">Krishnamurti Paddhati \u2022 NSE India \u2022 Standalone</span>
+    </div>
+    <div class="controls">
+      <a href="manual.html" target="_blank" style="font-size:.8rem;color:var(--gold);text-decoration:none;padding:6px 12px;border:1px solid var(--gold);border-radius:var(--r)">\u{1F4D6} Manual</a>
+      <label style="font-size:.8rem;color:var(--tx2)">Date:</label>
+      <input type="date" class="date-input" id="dateInput" value="${state.date}">
+    </div>
+  </div>
+  <div class="main">
+    <div class="left">
+      <div class="ph">\u2734 NSE Stock Screener</div>
+      <div class="sbox">
+        <input class="search" id="searchInput" placeholder="Search stocks..." value="${esc(state.search)}">
+        <select class="sel" id="sectorSel">
+          <option value="">All Sectors</option>
+          ${sectors.map(s=>`<option value="${s}" ${state.sector===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="slist">
+        ${filtered.map(c=>`<div class="sitem ${state.selected&&state.selected.symbol===c.symbol?'active':''}" data-sym="${c.symbol}">
+          <div><div class="ssym">${c.symbol}</div><div class="snm">${esc(c.name)}</div></div>
+          <span class="ssec">${c.sector}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="center" id="center">${renderCenter()}</div>
+    <div class="right" id="right">${renderNews()}</div>
+  </div>`;
+  attach();
+}
+
+function renderCenter(){
+  if(!state.selected)return renderWelcome();
+  let h='';
+  // Price bar
+  const q=state.quote;
+  if(q){const pos=q.change>=0;
+    h+=`<div class="card"><div class="pbar">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div><div class="pname">${q.symbol}</div><div style="font-size:.72rem;color:var(--tx2)">${esc(state.selected.name)}</div></div>
+        ${q.price?`<div class="pprice" style="color:${pos?'var(--bull)':'var(--bear)'}">\u20B9${q.price.toFixed(2)}</div>
+        <span class="pchg" style="background:${pos?'rgba(0,200,83,.1)':'rgba(255,23,68,.1)'};color:${pos?'var(--bull)':'var(--bear)'}">${pos?'+':''}${q.change.toFixed(2)} (${q.changePct}%)</span>`:'<span style="color:var(--neut);font-size:.8rem">Live price unavailable (CORS/market closed)</span>'}
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        ${state.transit?`<div class="badge"><div class="bl">KP Transit</div><div class="bv" style="color:${state.transit.sentiment==='BULLISH'?'var(--bull)':state.transit.sentiment==='BEARISH'?'var(--bear)':'var(--neut)'}">${state.transit.sentiment}</div></div>`:''}
+        ${q.volume?`<div class="badge"><div class="bl">Volume</div><div class="bv">${(q.volume/1e6).toFixed(1)}M</div></div>`:''}
+        ${q.high?`<div class="badge"><div class="bl">Day Range</div><div class="bv" style="font-size:.78rem">${q.low.toFixed(0)}-${q.high.toFixed(0)}</div></div>`:''}
+      </div></div></div>`;
+  }else if(state.loading){h+=`<div class="card"><div class="spin"></div><div style="text-align:center;color:var(--tx3)">Loading ${state.selected.symbol}...</div></div>`}
+  // Predictions summary + chart
+  if(state.preds){const p=state.preds,bl=p.filter(x=>x.signal.includes('BUY')).length,br=p.filter(x=>x.signal.includes('SELL')).length,
+    avg=p.reduce((s,x)=>s+parseFloat(x.score),0)/p.length;
+    h+=`<div class="card"><div class="ct">\u2609 KP Prediction Chart - Mumbai Transit (5-min)</div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="tag" style="background:rgba(0,200,83,.1);color:var(--bull)">\u25B2 Bullish: ${bl}</span>
+        <span class="tag" style="background:rgba(255,23,68,.1);color:var(--bear)">\u25BC Bearish: ${br}</span>
+        <span class="tag" style="background:${avg>0.1?'rgba(0,200,83,.15)':avg<-0.1?'rgba(255,23,68,.15)':'rgba(255,152,0,.15)'};color:${avg>0.1?'var(--bull)':avg<-0.1?'var(--bear)':'var(--neut)'}">Overall: ${avg>0.1?'BULLISH':avg<-0.1?'BEARISH':'NEUTRAL'} (${avg.toFixed(3)})</span>
+      </div>
+      <canvas id="chart" height="200"></canvas></div>`;
+    // KP Levels (mid-day)
+    const mid=p[Math.floor(p.length/2)];
+    h+=`<div class="card"><div class="ct">\u264E Current KP 5-Level (${mid.time} IST \u2022 Mumbai)</div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:var(--bg2);border-radius:var(--r)">
+        <span style="font-size:.74rem;color:var(--purple)">\u{1F3D9} Moon House: <b style="color:${houseColor(mid.moonHouse)}">H${mid.moonHouse}</b> (${mid.moonHouseSig})</span>
+        <span style="font-size:.74rem;color:var(--tx2)">Asc: <b style="color:var(--gold)">${mid.ascSign}</b></span>
+      </div>
+      <div class="grid">
+        ${[['L3 Star Lord',mid.moonLevels.starLord],['L4 Sub Lord',mid.moonLevels.subLord],['L5 Prana Lord',mid.moonLevels.pranaLord]].map(x=>`<div class="kpcard"><div class="kpl">${x[0]}</div><div class="kpv">${x[1]}</div></div>`).join('')}
+      </div></div>`;
+    // Timeline
+    const fp=state.filter==='all'?p:state.filter==='buy'?p.filter(x=>x.signal.includes('BUY')):state.filter==='sell'?p.filter(x=>x.signal.includes('SELL')):p.filter(x=>x.signal==='NEUTRAL');
+    h+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div class="ct" style="margin:0">\u23F1 Minute-Level Timeline</div>
+      <div style="display:flex;gap:6px">
+        ${['all','buy','sell','neutral'].map(f=>`<button class="btn ${state.filter===f?'active':''}" data-filter="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}
+      </div></div>
+      <div style="max-height:300px;overflow-y:auto">
+        ${fp.map(x=>{const sc=parseFloat(x.score);return`<div class="tline">
+          <span class="ttime">${x.time}</span>
+          <span class="tsig" style="background:${sigColor(x.signal)}22;color:${sigColor(x.signal)}">${x.signal.replace('_',' ')}</span>
+          <span class="tag" style="background:${houseColor(x.moonHouse)}1a;color:${houseColor(x.moonHouse)}">H${x.moonHouse}</span>
+          <span style="flex:1;font-size:.72rem;color:var(--tx3)">${x.moonLevels.starLord}\u2192${x.moonLevels.subLord}\u2192${x.moonLevels.pranaLord}</span>
+          <span style="font-weight:600;color:${sc>0?'var(--bull)':sc<0?'var(--bear)':'var(--neut)'}">${sc>0?'+':''}${x.score}</span></div>`}).join('')}
+      </div></div>`;
+  }
+  h+=renderTransit();
+  h+=renderHoroscope();
+  return h;
+}
+
+function renderTransit(){
+  if(!state.transit||!state.transit.report)return'';
+  const tr=state.transit.report;
+  return`<div class="card" style="border-color:rgba(156,39,176,.3)"><div class="ct">\u{1F3D9} Mumbai (NSE) Planetary Transit</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:var(--r);font-size:.72rem;color:var(--tx2)">
+      <span>\u{1F4CD} ${MUMBAI.latitude}\u00B0N, ${MUMBAI.longitude}\u00B0E</span><span>\u{1F551} IST (UTC+5:30)</span>
+      <span>\u2734 Ayanamsa: ${ayanamsa(new Date(state.date)).toFixed(2)}\u00B0</span><span>\u{1F3DB} Placidus Houses</span>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <tr><th>Time</th><th>Ascendant</th><th>Asc Star</th><th>Asc Sub</th><th>Moon Sign</th><th>Moon House</th></tr>
+      ${tr.map(t=>`<tr>
+        <td style="font-weight:600">${t.label}</td>
+        <td style="color:var(--gold)">${t.ascSign} (${t.ascDeg}\u00B0)</td>
+        <td>${PLANETS[t.ascLevels.starLord].name}</td>
+        <td>${PLANETS[t.ascLevels.subLord].name}</td>
+        <td style="color:var(--blue)">${t.planets.MOON.sign}</td>
+        <td><span class="tag" style="background:${houseColor(t.planets.MOON.house)}1a;color:${houseColor(t.planets.MOON.house)}">H${t.planets.MOON.house}</span></td>
+      </tr>`).join('')}
+    </table></div></div>`;
+}
+function renderHoroscope(){
+  if(!state.horoscope)return'';
+  const h=state.horoscope;
+  return`<div class="card"><div class="ct">\u2645 Company Natal Chart (Inc: ${state.selected.date})</div>
+    <div class="grid">
+      ${Object.keys(h).map(k=>{const d=h[k],sc=parseFloat(d.score);return`<div class="pcard">
+        <div class="psym">${d.symbol}</div>
+        <div style="font-size:.7rem;color:var(--tx2)">${k}</div>
+        <div style="font-size:.78rem;font-weight:600;color:var(--gold)">${d.sign}</div>
+        <div style="font-size:.65rem;color:var(--tx3)">${d.nakshatra}</div>
+        <div style="font-size:.7rem;font-weight:600;color:${natColor(sc)}">${d.score}</div></div>`}).join('')}
+    </div></div>`;
+}
+function renderNews(){
+  let h=`<div class="ph">\u2709 Stock News${state.selected?' ('+state.selected.symbol+')':''}</div>`;
+  if(!state.selected)return h+`<div style="padding:40px 20px;text-align:center;color:var(--tx3)"><div style="font-size:2rem">\u2709</div><div style="font-size:.85rem;margin-top:10px">Select a stock to view news</div></div>`;
+  if(state.loading||state.news===null)return h+`<div class="spin"></div>`;
+  if(!state.news.length)return h+`<div style="padding:20px;text-align:center;color:var(--tx3);font-size:.8rem">No news found (CORS may block direct fetch). Try the full app version.</div>`;
+  const pos=state.news.filter(n=>n.sentiment==='positive').length,neg=state.news.filter(n=>n.sentiment==='negative').length;
+  h+=`<div style="padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;gap:12px;font-size:.72rem">
+    <span style="color:var(--bull)">\u25B2 ${pos}</span><span style="color:var(--bear)">\u25BC ${neg}</span>
+    <span style="color:var(--neut)">\u25AC ${state.news.length-pos-neg}</span></div><div style="padding:12px">`;
+  h+=state.news.map(n=>`<a href="${n.url}" target="_blank" style="text-decoration:none"><div class="nitem">
+    <div class="ntitle">${esc(n.title)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:.7rem;color:var(--blue)">${esc(n.source)}${n.provider?' \u2022 '+esc(n.provider):''}</span>
+      <span class="tag" style="background:${n.sentiment==='positive'?'rgba(0,200,83,.1)':n.sentiment==='negative'?'rgba(255,23,68,.1)':'rgba(255,152,0,.1)'};color:${n.sentiment==='positive'?'var(--bull)':n.sentiment==='negative'?'var(--bear)':'var(--neut)'}">${n.sentiment}</span>
+    </div></div></a>`).join('');
+  return h+'</div>';
+}
+function renderWelcome(){
+  return`<div class="welcome"><div style="font-size:3rem">\u263D\u{1F3D9}</div>
+    <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin:12px 0">KP Astrology Stock Predictor</div>
+    <div style="font-size:.9rem;color:var(--tx2);max-width:420px">Select a stock to view minute-level KP predictions using the 5-level system (Sign\u2192Star\u2192Sub\u2192Prana Lord) with Mumbai (NSE) planetary transit positions.</div>
+    <div style="margin-top:20px;font-size:.78rem;color:var(--tx3);max-width:420px">All astrological calculations run offline in your browser. Live prices &amp; news are fetched from the internet when available.</div>
+  </div>`;
+}
+
+/* ============ CANVAS CHART (no library) ============ */
+function drawChart(){
+  const cv=$('chart');if(!cv||!state.preds)return;
+  const ctx=cv.getContext('2d'),W=cv.width=cv.offsetWidth,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const p=state.preds,pad=30,cw=W-pad*2,ch=H-pad*2;
+  const scores=p.map(x=>parseFloat(x.score)),mx=Math.max(0.4,...scores.map(Math.abs));
+  // axes
+  ctx.strokeStyle='rgba(42,58,74,.6)';ctx.lineWidth=1;
+  const zeroY=pad+ch/2;
+  ctx.beginPath();ctx.moveTo(pad,zeroY);ctx.lineTo(W-pad,zeroY);ctx.stroke();
+  // signal bars
+  const bw=cw/p.length;
+  p.forEach((x,i)=>{const sc=parseFloat(x.score),bh=(Math.abs(sc)/mx)*(ch/2),
+    col=x.signal==='STRONG_BUY'?'rgba(0,200,83,.8)':x.signal==='BUY'?'rgba(102,187,106,.6)':x.signal==='STRONG_SELL'?'rgba(255,23,68,.8)':x.signal==='SELL'?'rgba(239,83,80,.6)':'rgba(255,152,0,.5)';
+    ctx.fillStyle=col;
+    if(sc>=0)ctx.fillRect(pad+i*bw,zeroY-bh,bw*0.7,bh);
+    else ctx.fillRect(pad+i*bw,zeroY,bw*0.7,bh)});
+  // score line
+  ctx.strokeStyle='#f0b90b';ctx.lineWidth=2;ctx.beginPath();
+  p.forEach((x,i)=>{const sc=parseFloat(x.score),px=pad+i*bw+bw*0.35,py=zeroY-(sc/mx)*(ch/2);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)});
+  ctx.stroke();
+  // labels
+  ctx.fillStyle='#5c6d7e';ctx.font='9px sans-serif';
+  for(let i=0;i<p.length;i+=12){ctx.fillText(p[i].time,pad+i*bw,H-8)}
+  ctx.fillText('+'+mx.toFixed(2),2,pad+6);ctx.fillText('0',2,zeroY+3);ctx.fillText('-'+mx.toFixed(2),2,H-pad)}
+
+/* ============ EVENT HANDLERS ============ */
+function attach(){
+  $('searchInput').oninput=e=>{state.search=e.target.value;const v=e.target.value;render();$('searchInput').focus();$('searchInput').value=v};
+  $('sectorSel').onchange=e=>{state.sector=e.target.value;render()};
+  $('dateInput').onchange=e=>{state.date=e.target.value;if(state.selected)loadStock(state.selected)};
+  document.querySelectorAll('.sitem').forEach(el=>el.onclick=()=>{
+    const c=COMPANIES.find(x=>x.symbol===el.dataset.sym);loadStock(c)});
+  document.querySelectorAll('[data-filter]').forEach(el=>el.onclick=()=>{state.filter=el.dataset.filter;render();drawChart()});
+  drawChart();
+}
+
+/* ============ DATA LOADING ============ */
+async function loadStock(c){
+  state.selected=c;state.loading=true;state.quote=null;state.news=null;
+  // Instant local calculations
+  state.preds=genPredictions(state.date,5);
+  state.horoscope=genHoroscope(c.date);
+  const report=mumbaiTransit(state.date);
+  const mo=report[0],keyHouses=[2,5,6,10,11];
+  let tscore=0,tc=0;report.forEach(t=>{for(const k in t.planets){tscore+=parseFloat(t.planets[k].score);tc++}});
+  const avg=tscore/tc;
+  state.transit={report,sentiment:avg>0.15?'BULLISH':avg<-0.15?'BEARISH':'NEUTRAL'};
+  render();drawChart();
+  // Async live data
+  const [q,n]=await Promise.all([fetchQuote(c.symbol),fetchNews(c.symbol,c.name)]);
+  state.quote=q||{symbol:c.symbol,price:null};state.news=n;state.loading=false;
+  render();drawChart();
+}
+
+/* ============ INIT ============ */
+render();
+window.addEventListener('resize',()=>{if(state.preds)drawChart()});
+</script>
+</body>
+</html>

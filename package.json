@@ -1,0 +1,18 @@
+{
+  "name": "kp-stock-predictor",
+  "version": "1.0.0",
+  "description": "KP Astrology-based Stock Screener and Price Predictor for NSE India",
+  "private": true,
+  "scripts": {
+    "dev:server": "node server/index.js",
+    "dev:client": "cd client && npx vite --port 3000",
+    "build:client": "cd client && npx vite build",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "node-cache": "^5.1.2"
+  }
+}

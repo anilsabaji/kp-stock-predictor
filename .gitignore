@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output (keep client/dist so the app can be served, but ignore caches)
+.expo/
+dist/web/
+mobile/dist/
+
+# Logs
+*.log
+npm-debug.log*
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KP Stock Predictor - Technical & User Manual</title>
+<style>
+
+@page { margin: 2cm; size: A4; }
+body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; color: #1a1a2e; line-height: 1.7; background: #fafbfc; }
+h1 { text-align: center; color: #0d1b2a; font-size: 2rem; border-bottom: 3px solid #f0b90b; padding-bottom: 15px; margin-bottom: 5px; }
+h2 { color: #1b2838; font-size: 1.5rem; margin-top: 50px; border-left: 5px solid #f0b90b; padding-left: 15px; page-break-before: always; }
+h3 { color: #2c3e50; font-size: 1.15rem; margin-top: 30px; }
+table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9rem; }
+th { background: #1a2332; color: #f0b90b; padding: 10px 12px; text-align: left; }
+td { padding: 8px 12px; border: 1px solid #ddd; }
+tr:nth-child(even) { background: #f4f6f8; }
+.subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 40px; }
+.formula { background: #1a2332; color: #e8eef4; padding: 15px 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem; margin: 15px 0; overflow-x: auto; }
+.note { background: #fff3cd; border-left: 4px solid #f0b90b; padding: 12px 16px; margin: 15px 0; font-size: 0.9rem; }
+.warning { background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px 16px; margin: 15px 0; font-size: 0.9rem; }
+.positive { color: #00c853; font-weight: 700; }
+.negative { color: #ff1744; font-weight: 700; }
+.neutral { color: #ff9800; font-weight: 700; }
+.toc { background: #f8f9fa; padding: 20px 30px; border-radius: 8px; border: 1px solid #e0e0e0; margin: 30px 0; }
+.toc a { text-decoration: none; color: #1a2332; display: block; padding: 3px 0; }
+.toc a:hover { color: #f0b90b; }
+@media print { body { font-size: 11pt; } h2 { page-break-before: always; } .no-print { display: none; } }
+</style>
+</head>
+<body>
+<h1>KP Astrology Stock Predictor<br>NSE India</h1>
+<p class="subtitle">Complete Technical & User Manual — Version 1.0.0 — June 2026</p>
+
+
+<div class="toc">
+<h3>Table of Contents</h3>
+<a href="#part1">Part I — Introduction & Overview</a>
+<a href="#part2">Part II — KP Astrology Fundamentals</a>
+<a href="#part3">Part III — Prediction Parameters & Significations</a>
+<a href="#part4">Part IV — Mumbai Transit Engine</a>
+<a href="#part5">Part V — Company Horoscope System</a>
+<a href="#part6">Part VI — User Guide</a>
+<a href="#part7">Part VII — Technical Reference</a>
+</div>
+
+<h2 id="part1">Part I — Introduction & Overview</h2>
+<h3>1.1 About This Application</h3>
+<p>The KP Stock Predictor applies Krishnamurti Paddhati (KP) Astrology to predict intraday stock market movements on the National Stock Exchange (NSE) of India. It generates minute-level buy/sell/neutral signals by analyzing planetary transit positions calculated for Mumbai (NSE location) using the Placidus house system and Lahiri Ayanamsa.</p>
+
+<h3>1.2 Data Sources</h3>
+<table>
+<tr><th>Data Type</th><th>Source</th><th>Update Frequency</th></tr>
+<tr><td>Stock Prices</td><td>Yahoo Finance API (*.NS)</td><td>Every 60 seconds</td></tr>
+<tr><td>Intraday Data</td><td>Yahoo Finance (1-min candles)</td><td>Every 60 seconds</td></tr>
+<tr><td>Company Info</td><td>Curated database (50 companies)</td><td>Static</td></tr>
+<tr><td>Incorporation Dates</td><td>NSE/MCA filings (verified)</td><td>Static</td></tr>
+<tr><td>Planetary Positions</td><td>Calculated (astronomical formulas)</td><td>Real-time</td></tr>
+<tr><td>News</td><td>Google News RSS (India edition)</td><td>10-min cache</td></tr>
+</table>
+
+<h2 id="part2">Part II — KP Astrology Fundamentals</h2>
+<h3>2.1 The 5-Level Sub-Division System</h3>
+<p>KP divides the zodiac into progressively finer levels. Each level's ruling planet determines the market influence at that granularity:</p>
+<table>
+<tr><th>Level</th><th>Name</th><th>Span</th><th>Weight</th><th>Role</th></tr>
+<tr><td><strong>L1</strong></td><td>Planet</td><td>Variable</td><td>10%</td><td>Primary sentiment indicator</td></tr>
+<tr><td><strong>L2</strong></td><td>Sign Lord</td><td>30° per sign</td><td>15%</td><td>Broad zodiac influence</td></tr>
+<tr><td><strong>L3</strong></td><td>Star Lord</td><td>13°20' per nakshatra</td><td>25%</td><td>Major directional force</td></tr>
+<tr><td><strong>L4</strong></td><td>Sub Lord</td><td>Dasha proportional</td><td>30%</td><td><strong>DECISIVE</strong> — confirms/denies direction</td></tr>
+<tr><td><strong>L5</strong></td><td>Prana Lord</td><td>Finest division</td><td>20%</td><td>Exact timing trigger</td></tr>
+</table>
+
+<h3>2.2 Vimshottari Dasha Proportions</h3>
+<p>The 120-year Vimshottari cycle divides each nakshatra into 9 sub-parts:</p>
+<table>
+<tr><th>Planet</th><th>Symbol</th><th>Years</th><th>Proportion</th><th>Sub-Span</th></tr>
+<tr><td>Ketu</td><td>☋</td><td>7</td><td>5.833%</td><td>0°46'40"</td></tr>
+<tr><td>Venus</td><td>♀</td><td>20</td><td>16.667%</td><td>2°13'20"</td></tr>
+<tr><td>Sun</td><td>☉</td><td>6</td><td>5.000%</td><td>0°40'00"</td></tr>
+<tr><td>Moon</td><td>☽</td><td>10</td><td>8.333%</td><td>1°06'40"</td></tr>
+<tr><td>Mars</td><td>♂</td><td>7</td><td>5.833%</td><td>0°46'40"</td></tr>
+<tr><td>Rahu</td><td>☊</td><td>18</td><td>15.000%</td><td>2°00'00"</td></tr>
+<tr><td>Jupiter</td><td>♃</td><td>16</td><td>13.333%</td><td>1°46'40"</td></tr>
+<tr><td>Saturn</td><td>♄</td><td>19</td><td>15.833%</td><td>2°06'40"</td></tr>
+<tr><td>Mercury</td><td>☿</td><td>17</td><td>14.167%</td><td>1°53'20"</td></tr>
+<tr style="font-weight:700;background:#e8f5e9"><td>TOTAL</td><td>—</td><td>120</td><td>100%</td><td>13°20'00"</td></tr>
+</table>
+
+
+<h2 id="part3">Part III — Prediction Parameters & Significations</h2>
+<h3>3.1 Nine Planets — Market Natures & Weights</h3>
+<table>
+<tr><th>Planet</th><th>Symbol</th><th>Weight</th><th>Nature</th><th>Stock Market Signification</th></tr>
+<tr><td>Jupiter</td><td>♃</td><td class="positive">+0.80</td><td class="positive">STRONGEST BULLISH</td><td>Expansion, growth, optimism, banking gains, FII inflow</td></tr>
+<tr><td>Venus</td><td>♀</td><td class="positive">+0.70</td><td class="positive">STRONG BULLISH</td><td>Luxury stocks, consumer rally, FMCG gains, positive sentiment</td></tr>
+<tr><td>Sun</td><td>☉</td><td class="positive">+0.40</td><td class="positive">MODERATE BULLISH</td><td>Authority, govt stocks steady, PSU positive, blue chips</td></tr>
+<tr><td>Rahu</td><td>☊</td><td class="positive">+0.30</td><td class="neutral">VOLATILE BULLISH</td><td>Unusual gains, speculation, manipulation, tech disruption</td></tr>
+<tr><td>Moon</td><td>☽</td><td class="positive">+0.20</td><td class="neutral">MILD BULLISH</td><td>Emotional trading, sentiment swings, retail activity, pharma</td></tr>
+<tr><td>Mercury</td><td>☿</td><td class="neutral">+0.10</td><td class="neutral">NEUTRAL</td><td>Mixed signals, IT sector, communication, trading volume</td></tr>
+<tr><td>Ketu</td><td>☋</td><td class="negative">−0.30</td><td class="negative">MILD BEARISH</td><td>Sudden moves, confusion, circuit breakers, IT glitches</td></tr>
+<tr><td>Mars</td><td>♂</td><td class="negative">−0.50</td><td class="negative">STRONG BEARISH</td><td>Aggressive selling, red candles, metals volatile, conflict</td></tr>
+<tr><td>Saturn</td><td>♄</td><td class="negative">−0.60</td><td class="negative">STRONGEST BEARISH</td><td>Contraction, fear, slow decline, regulatory crackdowns</td></tr>
+</table>
+
+<h3>3.2 Signal Generation Thresholds</h3>
+<table>
+<tr><th>Score Range</th><th>Signal</th><th>Color</th><th>Action</th></tr>
+<tr><td>> +0.30</td><td><strong>STRONG BUY</strong></td><td class="positive">■ Green (bright)</td><td>Strong entry point for longs</td></tr>
+<tr><td>+0.10 to +0.30</td><td><strong>BUY</strong></td><td class="positive">■ Green (muted)</td><td>Mild bullish; hold existing longs</td></tr>
+<tr><td>−0.10 to +0.10</td><td><strong>NEUTRAL</strong></td><td class="neutral">■ Orange</td><td>No clear direction; avoid new positions</td></tr>
+<tr><td>−0.30 to −0.10</td><td><strong>SELL</strong></td><td class="negative">■ Red (muted)</td><td>Mild bearish; reduce exposure</td></tr>
+<tr><td>< −0.30</td><td><strong>STRONG SELL</strong></td><td class="negative">■ Red (bright)</td><td>Exit longs; consider shorts</td></tr>
+</table>
+
+<h3>3.3 Moon House Position Scoring (Mumbai)</h3>
+<table>
+<tr><th>House</th><th>Bonus</th><th>Signification</th><th>Market Impact</th></tr>
+<tr style="background:#e8f5e9"><td>H11</td><td class="positive">+0.70</td><td>Gains/Income/Fulfillment</td><td>STRONGEST POSITIVE</td></tr>
+<tr style="background:#e8f5e9"><td>H5</td><td class="positive">+0.60</td><td>Speculation/Trading Gains</td><td>VERY POSITIVE</td></tr>
+<tr style="background:#e8f5e9"><td>H2</td><td class="positive">+0.50</td><td>Wealth/Finance</td><td>STRONG POSITIVE</td></tr>
+<tr style="background:#e8f5e9"><td>H10</td><td class="positive">+0.50</td><td>Career/Leadership</td><td>STRONG POSITIVE</td></tr>
+<tr><td>H9</td><td class="positive">+0.30</td><td>Fortune/Long-term</td><td>Positive</td></tr>
+<tr><td>H7</td><td>+0.20</td><td>Partnerships</td><td>Mildly positive</td></tr>
+<tr><td>H1</td><td>+0.10</td><td>Sentiment</td><td>Mildly positive</td></tr>
+<tr><td>H3</td><td>+0.10</td><td>Short-term moves</td><td>Mildly positive</td></tr>
+<tr><td>H4</td><td>0.00</td><td>Stability</td><td>Neutral</td></tr>
+<tr style="background:#ffebee"><td>H6</td><td class="negative">−0.30</td><td>Debts/Obstacles</td><td>Negative</td></tr>
+<tr style="background:#ffebee"><td>H8</td><td class="negative">−0.50</td><td>Sudden Losses</td><td>STRONG NEGATIVE</td></tr>
+<tr style="background:#ffebee"><td>H12</td><td class="negative">−0.60</td><td>Losses/Expenses</td><td>STRONGEST NEGATIVE</td></tr>
+</table>
+
+<h3>3.4 Composite Score Formula</h3>
+<div class="formula">
+Mumbai Enhanced Score =<br>
+&nbsp;&nbsp;(Moon_KP_Score × <strong>0.40</strong>) +<br>
+&nbsp;&nbsp;(Ascendant_KP_Score × <strong>0.30</strong>) +<br>
+&nbsp;&nbsp;(Moon_House_Bonus × <strong>0.15</strong>) +<br>
+&nbsp;&nbsp;(Transit_Aspect_Score × <strong>0.15</strong>)<br><br>
+Where each KP Score =<br>
+&nbsp;&nbsp;(L1_Planet_Weight × 0.10) + (L2_SignLord_Weight × 0.15) +<br>
+&nbsp;&nbsp;(L3_StarLord_Weight × 0.25) + (L4_SubLord_Weight × 0.30) +<br>
+&nbsp;&nbsp;(L5_PranaLord_Weight × 0.20)
+</div>
+
+
+<h2 id="part4">Part IV — Mumbai Transit Engine</h2>
+<h3>4.1 NSE Location Parameters</h3>
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Location</td><td>NSE Bandra Kurla Complex, Mumbai, India</td></tr>
+<tr><td>Latitude</td><td>19.0560° N (19°03'22" North)</td></tr>
+<tr><td>Longitude</td><td>72.8470° E (72°50'49" East)</td></tr>
+<tr><td>Timezone</td><td>IST — Indian Standard Time (UTC+5:30)</td></tr>
+<tr><td>House System</td><td>Placidus (KP standard)</td></tr>
+<tr><td>Ayanamsa</td><td>Lahiri / Chitrapaksha (~24.23° in 2026)</td></tr>
+<tr><td>Market Hours</td><td>9:15 AM — 3:30 PM IST</td></tr>
+</table>
+
+<h3>4.2 Ascendant Progression During Market Hours</h3>
+<p>The Ascendant (rising sign) changes approximately every 2 hours from Mumbai's latitude:</p>
+<table>
+<tr><th>Time (IST)</th><th>Typical Ascending Sign</th><th>Sign Lord</th><th>Market Nature</th></tr>
+<tr><td>09:00 – 10:30</td><td>Cancer</td><td>Moon</td><td>Emotional/Volatile</td></tr>
+<tr><td>10:30 – 12:00</td><td>Leo</td><td>Sun</td><td>Authority/Steady</td></tr>
+<tr><td>12:00 – 14:00</td><td>Virgo</td><td>Mercury</td><td>Analytical/Mixed</td></tr>
+<tr><td>14:00 – 15:30</td><td>Libra</td><td>Venus</td><td>Balanced/Bullish</td></tr>
+</table>
+<div class="note"><strong>Note:</strong> Exact ascendant depends on the date. The above is representative for mid-year. The system calculates the precise ascendant for each minute.</div>
+
+<h3>4.3 Ascendant Calculation Formula</h3>
+<div class="formula">
+Step 1: GMST = 280.46062 + 360.98565 × (JD − 2451545.0)<br>
+Step 2: LST = GMST + 72.847° (Mumbai longitude)<br>
+Step 3: ε = 23.4393° − 0.0130° × T (obliquity)<br>
+Step 4: tan(ASC) = cos(LST) / −(sin(ε)×tan(19.056°) + cos(ε)×sin(LST))<br>
+Step 5: Sidereal ASC = Tropical ASC − Lahiri Ayanamsa
+</div>
+
+<h3>4.4 House Significations for Stock Market</h3>
+<table>
+<tr><th>House</th><th>Domain</th><th>Stock Market Application</th></tr>
+<tr><td>1</td><td>Self</td><td>Overall market mood; index sentiment</td></tr>
+<tr><td>2</td><td>Wealth</td><td>Banking stocks; portfolio growth; earnings</td></tr>
+<tr><td>3</td><td>Communication</td><td>Telecom; media; intraday scalping</td></tr>
+<tr><td>4</td><td>Property</td><td>Real estate; infrastructure; stability</td></tr>
+<tr><td>5</td><td>Speculation</td><td>F&O gains; options; creative sectors</td></tr>
+<tr><td>6</td><td>Debts</td><td>Healthcare; obstacles; litigation risk</td></tr>
+<tr><td>7</td><td>Partnerships</td><td>M&A; contracts; FII/DII balance</td></tr>
+<tr><td>8</td><td>Sudden Events</td><td>Black swans; hidden losses; insurance</td></tr>
+<tr><td>9</td><td>Fortune</td><td>Exports; global markets; long-term growth</td></tr>
+<tr><td>10</td><td>Career</td><td>Large-cap leadership; govt policy</td></tr>
+<tr><td>11</td><td>Gains</td><td>Profit booking; target achievement; income</td></tr>
+<tr><td>12</td><td>Losses</td><td>Capital erosion; foreign outflow; exits</td></tr>
+</table>
+
+<h2 id="part5">Part V — Company Horoscope System</h2>
+<h3>5.1 Natal Chart Logic</h3>
+<p>Each company's horoscope is derived from its <strong>NSE incorporation/registration date</strong>. The planetary positions at noon UTC on that date form the company's permanent natal signature.</p>
+
+<h3>5.2 Transit-to-Natal Aspects</h3>
+<table>
+<tr><th>Aspect</th><th>Angle</th><th>Nature</th><th>Orb</th><th>Market Meaning</th></tr>
+<tr><td>Conjunction</td><td>0°</td><td>Strong</td><td>8°</td><td>Direct activation of natal promise</td></tr>
+<tr><td>Sextile</td><td>60°</td><td>Positive</td><td>8°</td><td>Opportunity; gentle support</td></tr>
+<tr><td>Square</td><td>90°</td><td>Challenging</td><td>8°</td><td>Tension; forced volatile action</td></tr>
+<tr><td>Trine</td><td>120°</td><td>Positive</td><td>8°</td><td>Harmonious; easy gains</td></tr>
+<tr><td>Opposition</td><td>180°</td><td>Challenging</td><td>8°</td><td>Polarization; reversal risk</td></tr>
+</table>
+<div class="formula">
+Transit Score = Σ (Planet_Weight × Aspect_Multiplier × (1 − Orb/8))<br>
+Sentiment: Score > +0.5 → BULLISH | Score < −0.5 → BEARISH | else NEUTRAL
+</div>
+
+
+<h2 id="part6">Part VI — User Guide</h2>
+<h3>6.1 Quick Start</h3>
+<div class="formula">
+$ cd kp-stock-predictor<br>
+$ npm install && cd client && npm install && npx vite build && cd ..<br>
+$ npm start<br>
+→ Open http://localhost:4000
+</div>
+
+<h3>6.2 Interface Overview</h3>
+<table>
+<tr><th>Panel</th><th>Location</th><th>Contents</th></tr>
+<tr><td>Stock Screener</td><td>Left</td><td>Search, sector filter, 50 NSE companies</td></tr>
+<tr><td>Price Bar</td><td>Center (top)</td><td>Live price, change%, volume, transit sentiment</td></tr>
+<tr><td>KP Chart</td><td>Center</td><td>Gold score line, signal bars, Moon house effect, price overlay</td></tr>
+<tr><td>Mumbai Transit</td><td>Center</td><td>Daily transit table, key transits, house cusps</td></tr>
+<tr><td>KP 5-Levels</td><td>Center</td><td>Current moment's complete 5-level breakdown</td></tr>
+<tr><td>Timeline</td><td>Center</td><td>All 78 prediction intervals (filterable)</td></tr>
+<tr><td>Company Horoscope</td><td>Center (bottom)</td><td>9 planets in signs/nakshatras with scores</td></tr>
+<tr><td>News Panel</td><td>Right</td><td>Live headlines with sentiment badges</td></tr>
+</table>
+
+<h3>6.3 Reading Signals — Decision Framework</h3>
+<table>
+<tr><th>Condition</th><th>Action</th></tr>
+<tr><td>STRONG BUY + Moon in H5/H11 + Bullish transit</td><td>High-confidence long entry</td></tr>
+<tr><td>BUY + Moon in H2/H10 + Neutral transit</td><td>Moderate long entry</td></tr>
+<tr><td>NEUTRAL at any level</td><td>Stay flat; observe</td></tr>
+<tr><td>SELL + Moon in H6/H8</td><td>Exit longs; tight stops</td></tr>
+<tr><td>STRONG SELL + Moon in H12 + Bearish transit</td><td>High-confidence exit/short</td></tr>
+</table>
+
+<h2 id="part7">Part VII — Technical Reference</h2>
+<h3>7.1 API Endpoints</h3>
+<table>
+<tr><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET /api/nse/companies?search=&sector=</td><td>List NSE companies</td></tr>
+<tr><td>GET /api/nse/quote/:symbol</td><td>Real-time price + intraday</td></tr>
+<tr><td>GET /api/nse/sectors</td><td>Available sectors</td></tr>
+<tr><td>GET /api/kp/predictions?date=&interval=&mode=</td><td>Minute-level predictions (Mumbai)</td></tr>
+<tr><td>GET /api/kp/mumbai-transit?date=</td><td>Full daily transit report</td></tr>
+<tr><td>GET /api/kp/houses?date=</td><td>12 Placidus house cusps</td></tr>
+<tr><td>GET /api/kp/horoscope/:symbol</td><td>Company natal chart</td></tr>
+<tr><td>GET /api/kp/transit/:symbol?date=</td><td>Transit-to-natal aspects</td></tr>
+<tr><td>GET /api/kp/planets?date=</td><td>Current planetary positions</td></tr>
+<tr><td>GET /api/news/:symbol</td><td>News with sentiment</td></tr>
+</table>
+
+<h3>7.2 27 Nakshatras Reference Table</h3>
+<table>
+<tr><th>#</th><th>Nakshatra</th><th>Ruler</th><th>Start°</th><th>Market Nature</th></tr>
+<tr><td>1</td><td>Ashwini</td><td>Ketu</td><td>0°00'</td><td>Volatile/Sudden</td></tr>
+<tr><td>2</td><td>Bharani</td><td>Venus</td><td>13°20'</td><td>Bullish/Luxury</td></tr>
+<tr><td>3</td><td>Krittika</td><td>Sun</td><td>26°40'</td><td>Steady/Authority</td></tr>
+<tr><td>4</td><td>Rohini</td><td>Moon</td><td>40°00'</td><td>Emotional/Growth</td></tr>
+<tr><td>5</td><td>Mrigashira</td><td>Mars</td><td>53°20'</td><td>Aggressive/Red</td></tr>
+<tr><td>6</td><td>Ardra</td><td>Rahu</td><td>66°40'</td><td>Volatile/Unusual</td></tr>
+<tr><td>7</td><td>Punarvasu</td><td>Jupiter</td><td>80°00'</td><td>Expansion/Green</td></tr>
+<tr><td>8</td><td>Pushya</td><td>Saturn</td><td>93°20'</td><td>Contraction/Fear</td></tr>
+<tr><td>9</td><td>Ashlesha</td><td>Mercury</td><td>106°40'</td><td>Mixed/Analytical</td></tr>
+<tr><td>10</td><td>Magha</td><td>Ketu</td><td>120°00'</td><td>Volatile/Sudden</td></tr>
+<tr><td>11</td><td>P.Phalguni</td><td>Venus</td><td>133°20'</td><td>Bullish/Creative</td></tr>
+<tr><td>12</td><td>U.Phalguni</td><td>Sun</td><td>146°40'</td><td>Steady/Govt</td></tr>
+<tr><td>13</td><td>Hasta</td><td>Moon</td><td>160°00'</td><td>Emotional/Craft</td></tr>
+<tr><td>14</td><td>Chitra</td><td>Mars</td><td>173°20'</td><td>Aggressive/Build</td></tr>
+<tr><td>15</td><td>Swati</td><td>Rahu</td><td>186°40'</td><td>Independent/Unusual</td></tr>
+<tr><td>16</td><td>Vishakha</td><td>Jupiter</td><td>200°00'</td><td>Expansion/Goal</td></tr>
+<tr><td>17</td><td>Anuradha</td><td>Saturn</td><td>213°20'</td><td>Disciplined/Slow</td></tr>
+<tr><td>18</td><td>Jyeshtha</td><td>Mercury</td><td>226°40'</td><td>Communication</td></tr>
+<tr><td>19</td><td>Mula</td><td>Ketu</td><td>240°00'</td><td>Destruction/Reset</td></tr>
+<tr><td>20</td><td>P.Ashadha</td><td>Venus</td><td>253°20'</td><td>Invincible/Bull</td></tr>
+<tr><td>21</td><td>U.Ashadha</td><td>Sun</td><td>266°40'</td><td>Victory/Status</td></tr>
+<tr><td>22</td><td>Shravana</td><td>Moon</td><td>280°00'</td><td>Learning/Caution</td></tr>
+<tr><td>23</td><td>Dhanishta</td><td>Mars</td><td>293°20'</td><td>Wealth via Action</td></tr>
+<tr><td>24</td><td>Shatabhisha</td><td>Rahu</td><td>306°40'</td><td>Healing/Unusual</td></tr>
+<tr><td>25</td><td>P.Bhadrapada</td><td>Jupiter</td><td>320°00'</td><td>Transformation</td></tr>
+<tr><td>26</td><td>U.Bhadrapada</td><td>Saturn</td><td>333°20'</td><td>Discipline/Endure</td></tr>
+<tr><td>27</td><td>Revati</td><td>Mercury</td><td>346°40'</td><td>Completion/Travel</td></tr>
+</table>
+
+<div class="warning">
+<strong>DISCLAIMER:</strong> This software is for educational and research purposes only. It does NOT constitute financial advice. Astrological predictions do not guarantee market outcomes. Always consult qualified financial advisors and use proper risk management. The developers assume no liability for any financial losses.
+</div>
+
+<p style="text-align:center; margin-top:40px; color:#666; font-size:0.8rem;">
+— End of Manual — Version 1.0.0 — KP Stock Predictor © 2026 —
+</p>
+</body>
+</html>
