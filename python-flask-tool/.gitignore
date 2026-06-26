@@ -1,0 +1,12 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime / logs
+server.log
+nohup.out
+
+# OS
+.DS_Store
