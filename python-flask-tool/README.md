@@ -21,10 +21,20 @@ with a **back-tester** to check how the signal tracks actual movements.
 - Full **Technical Manual** at `/manual`
 
 ## Quick start
+
+### One-click launcher (easiest)
+- **Windows:** double-click **`run.bat`**
+- **macOS / Linux:** run **`./run.sh`** (or `bash run.sh`)
+
+The launcher creates a virtual environment, installs dependencies on first run,
+starts the server, and opens **http://127.0.0.1:5000** in your browser
+automatically. Press `Ctrl+C` in the window to stop it.
+
+### Manual start
 ```bash
-cd astro_stock
-source .venv/bin/activate          # a ready venv is included
-# or: python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+cd python-flask-tool
+python3.11 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 python app.py
 ```
 Open **http://127.0.0.1:5000** in your browser.
