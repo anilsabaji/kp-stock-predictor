@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KP + Mundane Astrology &middot; NSE Stock Prediction</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">&#9883;</span>
+      <div>
+        <h1>KP &amp; Mundane Astro &middot; NSE Predictor</h1>
+        <p class="tag">Krishnamurti Paddhati + Mundane astrology over real NSE prices</p>
+      </div>
+    </div>
+    <a class="manual-link" href="/manual" target="_blank">&#128214; Technical Manual</a>
+  </header>
+
+  <div class="disclaimer">
+    &#9888; <strong>Disclaimer:</strong> Astrology-based market forecasting has
+    <strong>no scientific or statistical validity</strong>. This is an educational /
+    astrological-research tool, <strong>not financial advice</strong>. Use the
+    back-tester to judge how the signal actually tracks prices.
+  </div>
+
+  <section class="controls">
+    <div class="search-wrap">
+      <label>Stock code or company name</label>
+      <input id="search" type="text" autocomplete="off"
+             placeholder="e.g. RELIANCE, TCS, Tata Motors, NIFTY 50, Bank Nifty&hellip;" />
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input id="date" type="date" />
+    </div>
+    <div class="field">
+      <label>Resolution</label>
+      <select id="step">
+        <option value="1">1 min (minute-by-minute)</option>
+        <option value="5" selected>5 min</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+      </select>
+    </div>
+    <button id="run" class="primary">Predict &amp; Overlay</button>
+  </section>
+
+  <section id="selected" class="selected hidden"></section>
+
+  <section class="chart-card">
+    <div id="chart" class="chart"></div>
+    <div id="chart-empty" class="empty">Search a stock or index, pick a date, then
+      press <em>Predict &amp; Overlay</em>.</div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Daily Astro Summary</h2>
+      <div id="summary" class="kv">&mdash;</div>
+    </section>
+    <section class="panel">
+      <h2>Panchanga (session open)</h2>
+      <div id="panchanga" class="kv">&mdash;</div>
+    </section>
+    <section class="panel">
+      <h2>Company / Index Dasha (now)</h2>
+      <div id="dasha" class="kv">&mdash;</div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Planetary Status at Chart Birth
+      <span class="sub">(NSE listing date &middot; 09:15 &middot; Mumbai)</span></h2>
+    <div id="planets-wrap" class="table-wrap">&mdash;</div>
+  </section>
+
+  <section class="panel">
+    <div class="bt-head">
+      <h2>Back-test: does price follow the astrology?</h2>
+      <div class="bt-controls">
+        <label>From <input id="bt-start" type="date" /></label>
+        <label>To <input id="bt-end" type="date" /></label>
+        <button id="bt-run">Run daily back-test</button>
+        <button id="bt-intraday">Back-test selected day (intraday)</button>
+      </div>
+    </div>
+    <div id="bt-summary" class="kv">&mdash;</div>
+    <div id="bt-table" class="table-wrap"></div>
+  </section>
+
+  <footer>
+    KP ayanamsa (Krishnamurti) &middot; Swiss Ephemeris &middot; prices via Yahoo
+    Finance / NSE &middot; built for education only.
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
