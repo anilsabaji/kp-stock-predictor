@@ -46,10 +46,20 @@ def ist_to_jd(when_ist: dt.datetime) -> float:
     return swe.julday(ut.year, ut.month, ut.day, hour)
 
 
+def _calc(jd: float, swe_id: int, flags: int):
+    """
+    Call swe.calc_ut and return the position array, tolerating both the
+    pyswisseph 2-tuple return (xx, retflag) and the pysweph 3-tuple return
+    (xx, retflag, serr). xx is always the first element.
+    """
+    out = swe.calc_ut(jd, swe_id, flags)
+    return out[0]
+
+
 def _declination(jd: float, swe_id: int) -> float:
     """Equatorial declination of a body in degrees."""
     flags = swe.FLG_MOSEPH | swe.FLG_EQUATORIAL | swe.FLG_SPEED
-    res, _ = swe.calc_ut(jd, swe_id, flags)
+    res = _calc(jd, swe_id, flags)
     return res[1]  # [RA, declination, dist, ...]
 
 
@@ -61,7 +71,7 @@ def _planet_raw(jd: float, name: str):
         lon, lat, spd, _ = _planet_raw(jd, "Rahu")
         return ((lon + 180.0) % 360.0, -lat, spd, -_declination(jd, swe.MEAN_NODE))
     swe_id = _SWE_ID[name]
-    res, _ = swe.calc_ut(jd, swe_id, _BASE_FLAGS)
+    res = _calc(jd, swe_id, _BASE_FLAGS)
     lon, lat, _dist, spd_lon = res[0], res[1], res[2], res[3]
     decl = _declination(jd, swe_id)
     return (lon % 360.0, lat, spd_lon, decl)
@@ -108,10 +118,17 @@ def ascendant_and_cusps(when_ist: dt.datetime,
     """
     jd = ist_to_jd(when_ist)
     # 'P' = Placidus. swe.houses_ex with SIDEREAL flag returns sidereal cusps.
-    cusps, ascmc = swe.houses_ex(jd, lat, lon, b'P', swe.FLG_SIDEREAL)
+    result = swe.houses_ex(jd, lat, lon, b'P', swe.FLG_SIDEREAL)
+    cusps, ascmc = result[0], result[1]
     asc = ascmc[0] % 360.0
-    # cusps is a 12-tuple (cusp1..cusp12) in swisseph >=2.08 with houses_ex
-    cusp_list = [c % 360.0 for c in cusps[:12]]
+    # pyswisseph returns a 12-item cusp tuple (cusp1..cusp12).
+    # pysweph (>=2.10.3.4) returns a 13-item tuple where index 0 is empty and
+    # cusps are at indices 1..12. Detect and normalise to exactly 12 values.
+    if len(cusps) >= 13:
+        cusp_vals = cusps[1:13]
+    else:
+        cusp_vals = cusps[:12]
+    cusp_list = [c % 360.0 for c in cusp_vals]
     return asc, cusp_list
 
 

@@ -1,7 +1,7 @@
 flask==3.1.3
 numpy==2.4.6
 pandas==3.0.3
-pyswisseph==2.10.3.2
+pysweph>=2.10.3.6
 pytz==2026.2
 requests==2.34.2
 yfinance==1.4.1

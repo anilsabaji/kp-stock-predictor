@@ -40,26 +40,27 @@ python app.py
 Open **http://127.0.0.1:5000** in your browser.
 
 ## Requirements
-- **Python 3.10 or 3.11** (recommended). The astronomy library `pyswisseph`
-  ships ready-made wheels for these versions, so **no C/C++ compiler is needed**.
-  Python **3.12+ on Windows** has no prebuilt wheel and will try to compile from
-  source, which fails unless you install the Microsoft C++ Build Tools.
-  Get Python 3.11 here: https://www.python.org/downloads/release/python-3119/
+- **Python 3.10, 3.11, 3.12 or 3.13.** The astronomy library `pysweph` ships
+  ready-made packages (wheels) for all of these, so **no C/C++ compiler is
+  needed** on Windows, macOS or Linux.
+- Python **3.14** has no prebuilt package yet — if that is all you have,
+  install 3.13 from https://www.python.org/downloads/
 
 ## Troubleshooting
 
 **`error: Microsoft Visual C++ 14.0 or greater is required` / `Failed building
-wheel for pyswisseph`:**
-You are running Python 3.12 or newer, which has no prebuilt wheel for the
-astronomy library. Fix it in 3 steps:
-1. Install **Python 3.11** (tick *Add python.exe to PATH*):
-   https://www.python.org/downloads/release/python-3119/
-2. Delete the `.venv` folder inside `python-flask-tool` (the launcher also does
-   this automatically once 3.11 is available).
-3. Double-click **`run.bat`** again. It will detect 3.11 and install cleanly.
+wheel`:**
+This means pip could not find a ready-made package for your Python version and
+tried to compile from source. Fix:
+1. Make sure you are on **Python 3.10–3.13** (3.14 is too new). Check with
+   `py -0` (Windows) or `python3 --version`.
+2. If needed, install **Python 3.13**: https://www.python.org/downloads/
+   (tick *Add python.exe to PATH*).
+3. Delete the `.venv` folder inside `python-flask-tool` (the launcher also
+   rebuilds it automatically) and double-click **`run.bat`** again.
 
 **`'python' is not recognized`:** Python was not added to PATH. Re-run the
 Python installer, choose *Modify*, and enable *Add Python to environment
-variables* (or reinstall and tick *Add python.exe to PATH*).
+variables*.
 
 See **TECHNICAL_MANUAL.md** (or the `/manual` page) for every parameter and rule.
