@@ -19,8 +19,10 @@ echo "  KP + Mundane Astrology :: NSE Stock Prediction Tool"
 echo "============================================================"
 
 # --- 1. Pick a Python interpreter (prefer 3.11, accept 3.10-3.13) ----------
+# Prefer 3.11/3.10 first: the astronomy library has ready-made wheels for
+# those (no compiler needed). 3.12+ works too if a C compiler is present.
 PY=""
-for c in python3.11 python3.12 python3.13 python3.10 python3 python; do
+for c in python3.11 python3.10 python3.12 python3.13 python3 python; do
   if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(0 if sys.version_info[:2]>=(3,10) else 1)" >/dev/null 2>&1; then
     PY="$c"; break
   fi

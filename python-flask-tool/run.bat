@@ -3,11 +3,11 @@ REM ==========================================================================
 REM  One-click launcher (Windows)
 REM  KP + Mundane Astrology NSE Stock Prediction Tool
 REM
-REM  Usage: double-click run.bat
-REM  Creates a virtual environment, installs dependencies (first run only),
-REM  starts the web server, and opens the tool in your browser.
+REM  Requires Python 3.10 or 3.11 (these have ready-made wheels for the
+REM  astronomy library, so NO C++ compiler is needed). Newer Python (3.12+)
+REM  would try to compile from source and fail without build tools.
 REM ==========================================================================
-setlocal
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 set "URL=http://127.0.0.1:5000"
 
@@ -15,41 +15,76 @@ echo ============================================================
 echo   KP + Mundane Astrology :: NSE Stock Prediction Tool
 echo ============================================================
 
-REM --- 1. Find a Python launcher / interpreter ------------------------------
+REM --- 1. Find a SUPPORTED Python (3.11 preferred, then 3.10) ---------------
 set "PY="
-where py >nul 2>&1 && set "PY=py -3"
-if not defined PY (
-  where python >nul 2>&1 && set "PY=python"
+for %%V in (3.11 3.10) do (
+  if not defined PY (
+    py -%%V -c "import sys" >nul 2>&1 && set "PY=py -%%V"
+  )
 )
+REM Fall back to a plain 'python' only if it is 3.10/3.11
 if not defined PY (
-  echo ERROR: Python 3 was not found. Install Python 3.10+ from python.org
-  echo        and tick "Add Python to PATH" during installation.
+  for /f "delims=" %%P in ('where python 2^>nul') do (
+    if not defined PY (
+      "%%P" -c "import sys;sys.exit(0 if (3,10)<=sys.version_info[:2]<=(3,11) else 1)" >nul 2>&1 && set "PY=%%P"
+    )
+  )
+)
+
+if not defined PY (
+  echo.
+  echo  -------------------------------------------------------------------
+  echo   Could not find a compatible Python ^(need version 3.10 or 3.11^).
+  echo.
+  echo   Please install Python 3.11 from:
+  echo       https://www.python.org/downloads/release/python-3119/
+  echo   Scroll down to "Windows installer (64-bit)".
+  echo   During install, TICK "Add python.exe to PATH".
+  echo.
+  echo   Then double-click run.bat again.
+  echo  -------------------------------------------------------------------
+  echo.
   pause
   exit /b 1
 )
 echo Using interpreter: %PY%
 
-REM --- 2. Create the virtual environment on first run -----------------------
-if not exist ".venv" (
+REM --- 2. Rebuild venv if it was created with an unsupported Python ---------
+if exist ".venv\Scripts\python.exe" (
+  .venv\Scripts\python.exe -c "import sys;sys.exit(0 if (3,10)<=sys.version_info[:2]<=(3,11) else 1)" >nul 2>&1
+  if errorlevel 1 (
+    echo Existing .venv uses an unsupported Python - rebuilding it...
+    rmdir /s /q .venv
+  )
+)
+
+REM --- 3. Create the virtual environment if needed -------------------------
+if not exist ".venv\Scripts\python.exe" (
   echo Creating virtual environment ^(.venv^) ...
   %PY% -m venv .venv
 )
 call .venv\Scripts\activate.bat
 
-REM --- 3. Install dependencies (skip if already installed) ------------------
+REM --- 4. Install dependencies (skip if already present) -------------------
 python -c "import flask, swisseph, yfinance, pandas" >nul 2>&1
 if errorlevel 1 (
   echo Installing dependencies ^(first run only, may take a minute^) ...
   python -m pip install --upgrade pip >nul
   python -m pip install -r requirements.txt
+  if errorlevel 1 (
+    echo.
+    echo  ERROR: dependency installation failed. See messages above.
+    pause
+    exit /b 1
+  )
 ) else (
   echo Dependencies already installed.
 )
 
-REM --- 4. Open the browser after a short delay ------------------------------
+REM --- 5. Open the browser after a short delay ------------------------------
 start "" cmd /c "timeout /t 3 >nul & start %URL%"
 
-REM --- 5. Run the server ----------------------------------------------------
+REM --- 6. Run the server ----------------------------------------------------
 echo Launching server -> %URL%   (press Ctrl+C to stop)
 python app.py
 
