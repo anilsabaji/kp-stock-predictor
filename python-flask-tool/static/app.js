@@ -131,7 +131,11 @@ async function runPrediction() {
 
 function drawChart(pred, prices) {
   $("chart-empty").style.display = "none";
-  const times = pred.series.map((p) => p.time);
+  // Use REAL datetime x-values (so the axis is a continuous time axis, not
+  // categorical). Mixing categorical "HH:MM" strings from two traces with
+  // different sampling rates caused spurious horizontal zig-zags.
+  const xt = (t) => `${pred.date} ${t}`;
+  const xPred = pred.series.map((p) => xt(p.time));
   const scores = pred.series.map((p) => p.score);
 
   // anchor projection to actual open price if available for visual overlay
@@ -145,25 +149,27 @@ function drawChart(pred, prices) {
   const traces = [];
   // Astro score area (right axis)
   traces.push({
-    x: times, y: scores, name: "Astro score", yaxis: "y2",
+    x: xPred, y: scores, name: "Astro score", yaxis: "y2",
     type: "scatter", mode: "lines", line: { color: "#7c5cff", width: 1.5 },
     fill: "tozeroy", fillcolor: "rgba(124,92,255,0.12)",
-    hovertemplate: "%{x}<br>score %{y:.1f}<extra></extra>",
+    hovertemplate: "%{x|%H:%M}<br>score %{y:.1f}<extra></extra>",
   });
   // Astro projected price path (left axis)
   traces.push({
-    x: times, y: projection, name: "Astro projected price",
+    x: xPred, y: projection, name: "Astro projected price",
     type: "scatter", mode: "lines",
     line: { color: "#33c1b1", width: 2, dash: "dot" },
-    hovertemplate: "%{x}<br>proj \u20b9%{y:.2f}<extra></extra>",
+    hovertemplate: "%{x|%H:%M}<br>proj \u20b9%{y:.2f}<extra></extra>",
   });
-  // Actual price (left axis)
+  // Actual price (left axis) - sorted by time, gaps left as gaps
   if (bars.length) {
+    const sorted = bars.slice().sort((a, b) => a.time.localeCompare(b.time));
     traces.push({
-      x: bars.map((b) => b.time), y: bars.map((b) => b.price),
+      x: sorted.map((b) => xt(b.time)), y: sorted.map((b) => b.price),
       name: "Actual NSE price", type: "scatter", mode: "lines",
-      line: { color: "#f5a623", width: 2 },
-      hovertemplate: "%{x}<br>actual \u20b9%{y:.2f}<extra></extra>",
+      line: { color: "#f5a623", width: 2, shape: "linear" },
+      connectgaps: false,
+      hovertemplate: "%{x|%H:%M}<br>actual \u20b9%{y:.2f}<extra></extra>",
     });
   }
 
@@ -172,7 +178,9 @@ function drawChart(pred, prices) {
     font: { color: "#e6edf3", size: 11 },
     margin: { l: 60, r: 60, t: 30, b: 40 },
     legend: { orientation: "h", y: 1.12 },
-    xaxis: { title: "IST", gridcolor: "#222b36" },
+    xaxis: {
+      type: "date", tickformat: "%H:%M", title: "IST", gridcolor: "#222b36",
+    },
     yaxis: { title: "Price (\u20b9)", gridcolor: "#222b36" },
     yaxis2: {
       title: "Astro score", overlaying: "y", side: "right",
@@ -188,7 +196,7 @@ function drawChart(pred, prices) {
       font: { size: 13 },
     },
   };
-  Plotly.newPlot("chart", traces, layout, { responsive: true, displmodeBar: true });
+  Plotly.newPlot("chart", traces, layout, { responsive: true, displayModeBar: true });
   if (!bars.length) {
     $("chart-empty").style.display = "flex";
     $("chart-empty").innerHTML =
