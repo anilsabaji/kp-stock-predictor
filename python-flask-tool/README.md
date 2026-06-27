@@ -30,6 +30,12 @@ The launcher creates a virtual environment, installs dependencies on first run,
 starts the server, and opens **http://127.0.0.1:5000** in your browser
 automatically. Press `Ctrl+C` in the window to stop it.
 
+### Desktop shortcut (one-click from your Desktop) - Windows
+Double-click **`Create Desktop Shortcut.bat`** once. It places an icon named
+**"KP Astro Stock Tool"** on your Desktop. From then on, just double-click that
+icon to start the tool and open it in your browser - no need to find this
+folder again.
+
 ### Manual start
 ```bash
 cd python-flask-tool
